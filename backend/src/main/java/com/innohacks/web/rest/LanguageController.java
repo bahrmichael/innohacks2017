@@ -75,7 +75,7 @@ public class LanguageController {
     @GetMapping("/user/{user}/sentence/translate/")
     public ResponseEntity getTranslationForRecentSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
-        if (isAnyState(user) || !isSentenceSection(user)) {
+        if (hasNoState(user) || !isSentenceSection(user)) {
             return ResponseEntity.status(412).body(new SectionError(SECTION_SENTENCE_REQUIRED, userSection.get(user)));
         }
         return ResponseEntity.ok(recentSentenceOfUser.get(user).getEnglish());
@@ -88,7 +88,7 @@ public class LanguageController {
     @GetMapping("/user/{user}/explain/")
     public ResponseEntity getUnknownWordsForLastSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
-        if (isAnyState(user)) {
+        if (hasNoState(user)) {
             return ResponseEntity.status(412).body(new SectionError(SECTION_SENTENCE_REQUIRED, userSection.get(user)));
         } else if (!isExplainState(user)) {
             return ResponseEntity.status(412).body(new SectionError(SECTION_EXPLAIN_REQUIRED, userSection.get(user)));
@@ -104,7 +104,7 @@ public class LanguageController {
     @PostMapping("/user/{user}/explain/resolve/{yesOrNo}/")
     public ResponseEntity resolveWord(@PathVariable("user") String user, @PathVariable("yesOrNo") String state) {
         lastUserInteraction.put(user, LocalDateTime.now());
-        if (isAnyState(user)) {
+        if (hasNoState(user)) {
             return ResponseEntity.status(412).body(new SectionError(SECTION_SENTENCE_REQUIRED, userSection.get(user)));
         } else if (!isExplainState(user)) {
             return ResponseEntity.status(412).body(new SectionError(SECTION_EXPLAIN_REQUIRED, userSection.get(user)));
@@ -123,8 +123,8 @@ public class LanguageController {
         return ResponseEntity.ok(subList);
     }
 
-    private boolean isAnyState(final String user) {
-        return userSection.get(user) != null;
+    private boolean hasNoState(final String user) {
+        return userSection.get(user) == null;
     }
 
     private boolean isExplainState(final String user) {
