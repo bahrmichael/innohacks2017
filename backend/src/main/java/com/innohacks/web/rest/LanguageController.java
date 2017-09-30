@@ -42,11 +42,6 @@ public class LanguageController {
         return sentenceService.getRandomSentence().getEnglish();
     }
 
-    @GetMapping("/sentence/{sentence}/translate/")
-    public String flipSentence(@PathVariable("sentence") String sentence) {
-        return sentenceService.getTranslation(sentence);
-    }
-
     @GetMapping("/user/{user}/sentence/random/")
     public ResponseEntity getUnknownSentence(@PathVariable("user") String user) {
         Optional<Sentence> optional = sentenceService.getUnknownSentenceForUser(user);
@@ -83,7 +78,7 @@ public class LanguageController {
 
     @GetMapping("/user/{user}/explain/repeat/")
     public ResponseEntity repeatLatestWord(@PathVariable("user") String user) {
-        return getUnknownWordsForLastSentence(user);
+        return ResponseEntity.ok(recentUnknownWords.get(user));
     }
 
     @PostMapping("/user/{user}/explain/resolve/{state}/")
