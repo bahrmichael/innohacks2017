@@ -16,7 +16,8 @@ before_deploy:
 - eval "$(ssh-agent -s)"
 - chmod 600 /tmp/deploy_rsa
 - ssh-add /tmp/deploy_rsa
+- DATE=$(date +"%H%M")
 deploy:
 - provider: script
   skip_cleanup: true
-  script: rsync --quiet $TRAVIS_BUILD_DIR/target/under-stand*.war root@46.101.227.37:~/backend${date +"%H%M"} && ssh-agent -k
+  script: rsync --quiet $TRAVIS_BUILD_DIR/target/under-stand*.war root@46.101.227.37:~/backend$DATE && ssh-agent -k
