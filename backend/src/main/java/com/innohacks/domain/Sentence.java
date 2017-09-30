@@ -16,19 +16,19 @@ public class Sentence {
         this.id = id;
     }
 
-    public String getFirstLanguage() {
+    public String getEnglish() {
         return firstLanguage;
     }
 
-    public void setFirstLanguage(final String firstLanguage) {
+    public void setEnglish(final String firstLanguage) {
         this.firstLanguage = firstLanguage;
     }
 
-    public String getSecondLanguage() {
+    public String getGerman() {
         return secondLanguage;
     }
 
-    public void setSecondLanguage(final String secondLanguage) {
+    public void getGerman(final String secondLanguage) {
         this.secondLanguage = secondLanguage;
     }
 }
