@@ -20,4 +20,4 @@ before_deploy:
 deploy:
 - provider: script
   skip_cleanup: true
-  script: rsync --quiet $TRAVIS_BUILD_DIR/target/under-stand*.war root@46.101.227.37:~/backend$DATE && ssh-agent -k
+  script: rsync --quiet $TRAVIS_BUILD_DIR/backend/target/under-stand*.war root@46.101.227.37:~/backend$DATE && ssh-agent -k
