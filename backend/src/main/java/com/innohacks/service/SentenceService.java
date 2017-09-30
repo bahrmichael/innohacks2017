@@ -3,9 +3,11 @@ package com.innohacks.service;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
-import com.innohacks.config.LoggingConfiguration;
 import com.innohacks.domain.Sentence;
+import com.innohacks.domain.UserResult;
+import com.innohacks.domain.UserResultStatus;
 import com.innohacks.repository.SentenceRepository;
+import com.innohacks.repository.UserResultRepository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +23,15 @@ public class SentenceService {
     private final Logger log = LoggerFactory.getLogger(SentenceService.class);
 
     private final SentenceRepository sentenceRepository;
+    private final UserResultRepository userResultRepository;
 
     private Integer totalCount = null;
 
     @Autowired
-    public SentenceService(final SentenceRepository sentenceRepository) {
+    public SentenceService(final SentenceRepository sentenceRepository,
+                           final UserResultRepository userResultRepository) {
         this.sentenceRepository = sentenceRepository;
+        this.userResultRepository = userResultRepository;
     }
 
     private int getTotalCount() {
@@ -57,8 +62,26 @@ public class SentenceService {
             if (secondSide.isPresent()) {
                 return secondSide.get().getFirstLanguage();
             } else {
+                log.warn("Could not find flipSide for sentence={}", sentence);
                 return "not available";
             }
         }
+    }
+
+    public Optional<Sentence> findSentence(final String sentence) {
+        Optional<Sentence> firstSide = sentenceRepository.findOneByFirstLanguage(sentence);
+        if (firstSide.isPresent()) {
+            return firstSide;
+        } else {
+            return sentenceRepository.findOneBySecondLanguage(sentence);
+        }
+    }
+
+    public Optional<Sentence> findASentenceWithStatus(final String user, final UserResultStatus status) {
+        int random = ThreadLocalRandom.current().nextInt(userResultRepository.countByUserAndStatus(user, status));
+        PageRequest request = new PageRequest(random, 1);
+        Page<UserResult> all = userResultRepository.findAll(request);
+        UserResult userResult = all.getContent().get(0);
+        return Optional.of(sentenceRepository.findOne(userResult.getId()));
     }
 }
