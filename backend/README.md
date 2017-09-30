@@ -11,6 +11,8 @@ The provided application will serve lambda requests on /openapi/**. The applicat
 
 TBD
 
+TBD: Consider the sentence/explain states introduced during /repeat/ reduction.
+
 ## APIs
 
 The API always requires a user to operate on.
@@ -19,47 +21,61 @@ The URI has the two sections `sentence` and `explain` as explained in the state 
 
 A word is considered unknown, if the user has not marked it as known through `/openapi/user/{user}/explain/resolve/{state}/`
 
+APIs that are protected by `STATE_CHECK` will check if the current section for the user is correct. APIs may return `section_sentence_required` or `section_explain_required`.  
+
 The application provides the following APIs:
 
-### GET /openapi/user/{user}/state/
+### /openapi/user/{user}/state/
+
+#### GET
 
 Returns the current state of the user. Can be either `onboarding`, `new_session` or `continue`. These states are used by lambda to determine the greeting text upon skill startup.
 
+### /openapi/user/{user}/repeat/
+
+#### GET
+
+Returns the latest sentence or list of unknown words depending on the `userContext` which can either be `sentence` or `explain`.
+
+The list of unknown words may be reduced by /resolve/{state}/.
+
+The context switch is done to reduce the number of intent and "just repeat the last thing" Alexa said.
+
 ### /openapi/user/{user}/sentence/
 
-This is the sentence context. When starting the app, the first call must be to `/random/` to pick a first sentence to learn on.
-
-#### GET /random/
-
-Returns a German sentence of which the user doesn't know one or more words.
+This is the sentence context. When starting the app, the first call must be to `/next/` to pick a first sentence to learn on.
 
 #### GET /next/
 
-See /random/.
+Returns a German sentence of which the user doesn't know one or more words.
 
-#### GET /repeat/
-
-Returns the last sentence that was returned by /random/, which must have been called first.
+Sets the `userContext` to `sentence`.
 
 #### GET /translate/
 
-Returns the translation of the last sentence that was returned by /random/, which must have been called first.
+Protected by `STATE_CHECK`.
+
+Returns the translation of the last sentence that was returned by `/next/`, which must have been called first.
 
 ### /openapi/user/{user}/explain/
 
 This is the explain context. It provides more details on the previously selected sentence. You must have called any of the `sentence` URIs in advance.
 
-#### GET /
+#### GET
+
+Protected by `STATE_CHECK`.
 
 Returns all unknown words of the recent sentence.
 
-#### GET /repeat/
+Sets the `userContext` to `explain`.
 
-Returns the unknown words of the recent sentence. The list may be reduced by /resolve/{state}/.
+#### POST /resolve/{yesOrNo}/
 
-#### GET /resolve/{state}/
+Protected by `STATE_CHECK`.
 
-If state=yes, then the currently first unknown word is added to the user's known words.
-If state=no, then the currently first unknown word is not added to the user's known words.
+If `yesOrNo` is `yes`, then the currently first unknown word is added to the user's known words.
+If `yesOrNo` is `no`, then the currently first unknown word is not added to the user's known words.
 
 The API then removes the first element of the currently unknown words and returns the reduced list.
+
+Sets the `userContext` to `sentence` if there are no more remaining words in the reduced list.

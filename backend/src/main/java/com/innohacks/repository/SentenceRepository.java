@@ -12,6 +12,6 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface SentenceRepository extends MongoRepository<Sentence, String> {
-    Optional<Sentence> findOneByFirstLanguage(String first);
-    Optional<Sentence> findOneBySecondLanguage(String first);
+    Optional<Sentence> findOneByEnglish(String sentence);
+    Optional<Sentence> findOneByGerman(String sentence);
 }

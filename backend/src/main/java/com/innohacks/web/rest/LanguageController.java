@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,28 +21,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/openapi")
 public class LanguageController {
 
+    private static final String EXPLAIN = "explain";
+    private static final String SENTENCE = "sentence";
+    private static final String INIT = "init";
     private final LanguageService sentenceService;
     private Map<String, Sentence> recentSentenceOfUser = new HashMap<>();
     private Map<String, List<String>> recentUnknownWords = new HashMap<>();
     private Map<String, LocalDateTime> lastUserInteraction = new HashMap<>();
+    private Map<String, String> userSection = new HashMap<>();
 
     public LanguageController(final LanguageService sentenceService) {
         this.sentenceService = sentenceService;
     }
 
-    @GetMapping("/dummy/")
-    public String dummy() {
-        return "Hallo Welt!";
-    }
-
-    @GetMapping("/dummy/{sentence}/")
-    public String dummyLong(@PathVariable("sentence") String sentence) {
-        return sentence;
-    }
-
     @GetMapping("/user/{user}/state/")
     public String getState(@PathVariable("user") String user) {
         LocalDateTime dateTime = lastUserInteraction.get(user);
+        lastUserInteraction.put(user, LocalDateTime.now());
         if (null == dateTime) {
             int count = sentenceService.countKnownWords(user);
             if (count > 0) {
@@ -60,9 +56,10 @@ public class LanguageController {
         return dateTime.isAfter(LocalDateTime.now().minusMinutes(30));
     }
 
-    @GetMapping("/user/{user}/sentence/random/")
+    @GetMapping("/user/{user}/sentence/next/")
     public ResponseEntity getUnknownSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
+        userSection.put(user, SENTENCE);
 
         Optional<Sentence> optional = sentenceService.getUnknownSentenceForUser(user);
         if (optional.isPresent()) {
@@ -74,42 +71,45 @@ public class LanguageController {
         }
     }
 
-    @GetMapping("/user/{user}/sentence/next/")
-    public ResponseEntity getResult(@PathVariable("user") String user) {
-        return getUnknownSentence(user);
-    }
-
-    @GetMapping("/user/{user}/sentence/repeat/")
-    public ResponseEntity getRepeat(@PathVariable("user") String user) {
-        lastUserInteraction.put(user, LocalDateTime.now());
-        return ResponseEntity.ok(recentSentenceOfUser.get(user));
-    }
-
     @GetMapping("/user/{user}/sentence/translate/")
     public ResponseEntity getTranslationForRecentSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
+        if (hasNoState(user)) {
+            return ResponseEntity.status(412).body(new SectionError(INIT, userSection.get(user)));
+        } else if (!isSentenceSection(user)) {
+            return ResponseEntity.status(412).body(new SectionError(SENTENCE, userSection.get(user)));
+        }
         return ResponseEntity.ok(recentSentenceOfUser.get(user).getEnglish());
+    }
+
+    private boolean isSentenceSection(final String user) {
+        return userSection.get(user).equals(SENTENCE);
     }
 
     @GetMapping("/user/{user}/explain/")
     public ResponseEntity getUnknownWordsForLastSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
+        if (hasNoState(user)) {
+            return ResponseEntity.status(412).body(new SectionError(INIT, userSection.get(user)));
+        } else if (!isSentenceSection(user)) {
+            return ResponseEntity.status(412).body(new SectionError(SENTENCE, userSection.get(user)));
+        }
+
+        userSection.put(user, EXPLAIN);
 
         List<String> unknownWords = sentenceService.getUnknownWords(user, recentSentenceOfUser.get(user));
         recentUnknownWords.put(user, unknownWords);
         return ResponseEntity.ok(unknownWords);
     }
 
-    @GetMapping("/user/{user}/explain/repeat/")
-    public ResponseEntity repeatLatestWord(@PathVariable("user") String user) {
+    @PostMapping("/user/{user}/explain/resolve/{yesOrNo}/")
+    public ResponseEntity resolveWord(@PathVariable("user") String user, @PathVariable("yesOrNo") String state) {
         lastUserInteraction.put(user, LocalDateTime.now());
-
-        return ResponseEntity.ok(recentUnknownWords.get(user));
-    }
-
-    @PostMapping("/user/{user}/explain/resolve/{state}/")
-    public ResponseEntity resolveWord(@PathVariable("user") String user, @PathVariable("state") String state) {
-        lastUserInteraction.put(user, LocalDateTime.now());
+        if (hasNoState(user)) {
+            return ResponseEntity.status(412).body(new SectionError(INIT, userSection.get(user)));
+        } else if (!isExplainState(user)) {
+            return ResponseEntity.status(412).body(new SectionError(EXPLAIN, userSection.get(user)));
+        }
 
         List<String> words = recentUnknownWords.get(user);
         String currentWord = words.get(0);
@@ -118,6 +118,44 @@ public class LanguageController {
         }
         List<String> subList = words.subList(1, words.size());
         recentUnknownWords.put(user, subList);
+        if (subList.isEmpty()) {
+            userSection.put(user, SENTENCE);
+        }
         return ResponseEntity.ok(subList);
+    }
+
+    private boolean hasNoState(final String user) {
+        boolean hasNoState = userSection.get(user) == null;
+        if (hasNoState) {
+            userSection.put(user, INIT);
+        }
+        return hasNoState;
+    }
+
+    private boolean isExplainState(final String user) {
+        return userSection.get(user).equals(EXPLAIN);
+    }
+
+    @GetMapping("/user/{user}/repeat/")
+    public ResponseEntity getRepeat(@PathVariable("user") String user) {
+        lastUserInteraction.put(user, LocalDateTime.now());
+
+        String state = userSection.get(user);
+        // if no state is available, which means the user has not yet requested a first sentence, then we take a random one
+        if (null == state) {
+            return getUnknownSentence(user);
+        }
+
+        if (SENTENCE.equals(state)) {
+            return ResponseEntity.ok(recentSentenceOfUser.get(user));
+        } else {
+            return ResponseEntity.ok(recentUnknownWords.get(user));
+        }
+    }
+
+    @PostMapping("/sentences/")
+    public ResponseEntity postSentences(@RequestBody Sentence sentence) {
+        sentenceService.add(sentence);
+        return ResponseEntity.ok().build();
     }
 }
