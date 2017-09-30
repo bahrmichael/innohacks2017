@@ -71,4 +71,9 @@ public class MainController {
         }
     }
 
+    @GetMapping("/user/{user}/sentence")
+    public ResponseEntity getResult(@PathVariable("user") String user) {
+        // todo miro
+        return ResponseEntity.ok().build();
+    }
 }
