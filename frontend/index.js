@@ -1,5 +1,5 @@
 var handleError = function(error) {
-    var speechOutput = '';
+    var speechOutput = 'no error case matched';
     var err = error.response.data;
     if (err.currentSection === 'init' && err.requiredSection === 'sentence') {
         speechOutput = 'You can start your workout by saying start';
@@ -14,7 +14,17 @@ var handleError = function(error) {
     // return speechOutput;
 };
 
-
+var AWS = require("aws-sdk");
+var toSpeech = function(text) {
+    var presigner = new AWS.Polly.Presigner();
+    var url = presigner.getSynthesizeSpeechUrl({
+        TextType: 'text',
+        OutputFormat: 'mp3',
+        VoiceId: 'Vickie',
+        Text: outputText
+    });
+    return '<speak><audio src="' + url + '" /></speak>'
+};
 
 var notAllowed = 'This option is not allowed.';
 
@@ -36,6 +46,7 @@ var APP_ID = undefined;  // TODO replace with your app ID (OPTIONAL).
 var speechOutput = '';
 var handlers = {
     'LaunchRequest': function () {
+        welcomeOutput = toSpeech(welcomeOutput);
         this.emit(':ask', welcomeOutput, welcomeReprompt);
     },
     'AMAZON.HelpIntent': function () {
@@ -68,7 +79,7 @@ var handlers = {
             .then(function(res) {
                 speechOutput = res.data;
                 self.emit(":ask", speechOutput, speechOutput);
-            });
+            }).catch(handleError.bind(self));
     },
     "repeat": function () {
         var speechOutput = "";
@@ -87,7 +98,7 @@ var handlers = {
             .then(function(res) {
                 speechOutput = res.data;
                 self.emit(":ask", speechOutput, speechOutput);
-            });
+            }).catch(handleError.bind(self));
 
     },
     "next": function () {
@@ -98,16 +109,7 @@ var handlers = {
             .then(function(res) {
                 speechOutput = res.data;
                 self.emit(":ask", speechOutput, speechOutput);
-            });
-        understandApi.get('user/'+ user +'/sentence/random/')
-            .then(function(res) {
-                speechOutput = res.data;
-                self.emit(":ask", speechOutput, speechOutput);
-            });
-
-        speechOutput = "This is the next intent";
-        this.emit(":ask", speechOutput, speechOutput);
-
+            }).catch(handleError.bind(self));
     },
     "start": function () {
         var speechOutput = "";
@@ -117,10 +119,8 @@ var handlers = {
         var mainSlot = resolveCanonical(this.event.request.intent.slots.main);
         console.log(mainSlot);
 
-        speechOutput = "This is the start intent";
-        this.emit(":ask", speechOutput, speechOutput);
         var self = this;
-        understandApi.get('user/'+ user +'/repeat/')
+        understandApi.get('user/'+ user +'/sentence/next/')
             .then(function(res) {
                 speechOutput = res.data;
                 self.emit(":ask", speechOutput, speechOutput);
@@ -150,33 +150,58 @@ var handlers = {
         var transSlot = resolveCanonical(this.event.request.intent.slots.trans);
         console.log(transSlot);
 
-        //Your custom intent handling goes here
-        speechOutput = "This is a place holder response for the intent named translate. This intent has one slot, which is trans. Anything else?";
-        this.emit(":ask", speechOutput, speechOutput);
+        var self = this;
+        understandApi.get('user/'+ user +'/sentence/translate/')
+            .then(function(res) {
+                speechOutput = res.data;
+                self.emit(":ask", speechOutput, speechOutput);
+            }).catch(handleError.bind(self));
     },
     "yes": function () {
         var speechOutput = "";
         //any intent slot variables are listed here for convenience
 
-        speechOutput = "This is a place holder response for the intent named yes.";
-        this.emit(":ask", speechOutput, speechOutput);
+        // speechOutput = "This is a place holder response for the intent named yes.";
+        // this.emit(":ask", speechOutput, speechOutput);
         var self = this;
-        understandApi.get('user/{user}/explain/resolve/yes/')
+        understandApi.post('user/'+ user +'/explain/resolve/yes/')
             .then(function(res) {
                 speechOutput = res.data;
                 self.emit(":ask", speechOutput, speechOutput);
-                if (res.data && res.data.length === []){
 
+                if (res.data && res.data.length === []){
+                    speechOutput = "No more new words";
+                    self.emit(":ask", speechOutput, speechOutput);
+
+                    understandApi.get('user/'+ user +'/sentence/repeat/')
+                        .then(function(res) {
+                            speechOutput = res.data;
+                            self.emit(":ask", speechOutput, speechOutput);
+                        }).catch(handleError.bind(self));
                 }
-            }).catch(handleError);
+            }).catch(handleError.bind(self));
     },
     "no": function () {
         var speechOutput = "";
         //any intent slot variables are listed here for convenience
 
-        //Your custom intent handling goes here
-        speechOutput = "This is a place holder response for the intent named no.";
-        this.emit(":ask", speechOutput, speechOutput);
+        var self = this;
+        understandApi.post('user/'+ user +'/explain/resolve/no/')
+            .then(function(res) {
+                speechOutput = res.data;
+                self.emit(":ask", speechOutput, speechOutput);
+
+                if (res.data && res.data.length === []){
+                    speechOutput = "No more new words";
+                    self.emit(":ask", speechOutput, speechOutput);
+
+                    understandApi.get('user/'+ user +'/sentence/repeat/')
+                        .then(function(res) {
+                            speechOutput = res.data;
+                            self.emit(":ask", speechOutput, speechOutput);
+                        }).catch(handleError.bind(self));
+                }
+            }).catch(handleError.bind(self));
     },
     'Unhandled': function () {
         speechOutput = "The skill didn't quite understand what you wanted.  Do you want to try something else?";

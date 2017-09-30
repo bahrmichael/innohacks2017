@@ -6,7 +6,7 @@
 </template>
 
 <script>
-  var handleError = function(error, data) {
+  var handleError = function(error) {
     var speechOutput;
     var err = error.response.data;
     if (err.currentSection === 'init' && err.requiredSection === 'sentence') {
