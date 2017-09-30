@@ -49,10 +49,6 @@ Sets the `userContext` to `sentence`.
 
 See /random/.
 
-#### GET /repeat/
-
-Returns the last sentence that was returned by /random/, which must have been called first.
-
 #### GET /translate/
 
 Returns the translation of the last sentence that was returned by /random/, which must have been called first.
@@ -67,10 +63,10 @@ Returns all unknown words of the recent sentence.
 
 Sets the `userContext` to `explain`.
 
-#### GET /resolve/{state}/
+#### GET /resolve/{yesOrNo}/
 
-If state=yes, then the currently first unknown word is added to the user's known words.
-If state=no, then the currently first unknown word is not added to the user's known words.
+If `yesOrNo` is `yes`, then the currently first unknown word is added to the user's known words.
+If `yesOrNo` is `no`, then the currently first unknown word is not added to the user's known words.
 
 The API then removes the first element of the currently unknown words and returns the reduced list.
 

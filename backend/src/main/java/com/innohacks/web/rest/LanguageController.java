@@ -99,8 +99,8 @@ public class LanguageController {
         return ResponseEntity.ok(unknownWords);
     }
 
-    @PostMapping("/user/{user}/explain/resolve/{state}/")
-    public ResponseEntity resolveWord(@PathVariable("user") String user, @PathVariable("state") String state) {
+    @PostMapping("/user/{user}/explain/resolve/{yesOrNo}/")
+    public ResponseEntity resolveWord(@PathVariable("user") String user, @PathVariable("yesOrNo") String state) {
         lastUserInteraction.put(user, LocalDateTime.now());
 
         List<String> words = recentUnknownWords.get(user);
