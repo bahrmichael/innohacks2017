@@ -124,4 +124,8 @@ public class LanguageService {
         word.setWord(currentWord.toLowerCase());
         userKnownWordsRepository.save(word);
     }
+
+    public int countKnownWords(final String user) {
+        return userKnownWordsRepository.countByUser(user);
+    }
 }

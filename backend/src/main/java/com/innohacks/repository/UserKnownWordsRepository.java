@@ -13,4 +13,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserKnownWordsRepository extends MongoRepository<UserKnownWord, String> {
     List<UserKnownWord> findByUser(String user);
+    int countByUser(String user);
 }

@@ -21,6 +21,10 @@ A word is considered unknown, if the user has not marked it as known through `/o
 
 The application provides the following APIs:
 
+### GET /openapi/user/{user}/state/
+
+Returns the current state of the user. Can be either `onboarding`, `new_session` or `continue`. These states are used by lambda to determine the greeting text upon skill startup.
+
 ### /openapi/user/{user}/sentence/
 
 This is the sentence context. When starting the app, the first call must be to `/random/` to pick a first sentence to learn on.
