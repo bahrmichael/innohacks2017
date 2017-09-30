@@ -1,3 +1,22 @@
+var handleError = function(error) {
+    var speechOutput = '';
+    var err = error.response.data;
+    if (err.currentSection === 'init' && err.requiredSection === 'sentence') {
+        speechOutput = 'You can start your workout by saying start';
+    }
+    if (err.currentSection === 'explain' && err.requiredSection === 'sentence') {
+        speechOutput = 'Is this a new word? Please choose yes or no.';
+    }
+    if (err.currentSection !== 'explain' && err.requiredSection === 'explain'){
+        speechOutput = notAllowed + 'Valid options are: explain, repeat, next';
+    }
+    self.emit(":ask", speechOutput, speechOutput);
+    // return speechOutput;
+};
+
+
+
+var notAllowed = 'This option is not allowed.';
 
 var speechOutput;
 var reprompt;
@@ -7,6 +26,12 @@ var welcomeReprompt = "sample re-prompt text";
 "use strict";
 var Alexa = require('alexa-sdk');
 var axios = require('axios');
+var understandApi = axios.create({
+    baseURL: 'http://46.101.227.37:10000/openapi/',
+    timeout: 1000
+});
+var user = 'Subject';
+
 var APP_ID = undefined;  // TODO replace with your app ID (OPTIONAL).
 var speechOutput = '';
 var handlers = {
@@ -35,9 +60,15 @@ var handlers = {
         var speechOutput = "";
         //any intent slot variables are listed here for convenience
 
-        //Your custom intent handling goes here
         speechOutput = "This is the explain intent";
         this.emit(":ask", speechOutput, speechOutput);
+
+        var self = this;
+        understandApi.get('user/{user}/explain/')
+            .then(function(res) {
+                speechOutput = res.data;
+                self.emit(":ask", speechOutput, speechOutput);
+            });
     },
     "repeat": function () {
         var speechOutput = "";
@@ -47,9 +78,36 @@ var handlers = {
         var mainSlotSlot = resolveCanonical(this.event.request.intent.slots.repeatSlot);
         console.log(mainSlotSlot);
 
-        //Your custom intent handling goes here
-        speechOutput = "This is the repeat intent " + mainSlotSlot;
+
+        speechOutput = "This is the repeat intent";
         this.emit(":ask", speechOutput, speechOutput);
+
+        var self = this;
+        understandApi.get('user/'+ user +'/repeat/')
+            .then(function(res) {
+                speechOutput = res.data;
+                self.emit(":ask", speechOutput, speechOutput);
+            });
+
+    },
+    "next": function () {
+        var speechOutput = "";
+
+        var self = this;
+        understandApi.get('user/'+ user +'/sentence/next/')
+            .then(function(res) {
+                speechOutput = res.data;
+                self.emit(":ask", speechOutput, speechOutput);
+            });
+        understandApi.get('user/'+ user +'/sentence/random/')
+            .then(function(res) {
+                speechOutput = res.data;
+                self.emit(":ask", speechOutput, speechOutput);
+            });
+
+        speechOutput = "This is the next intent";
+        this.emit(":ask", speechOutput, speechOutput);
+
     },
     "start": function () {
         var speechOutput = "";
@@ -61,6 +119,12 @@ var handlers = {
 
         speechOutput = "This is the start intent";
         this.emit(":ask", speechOutput, speechOutput);
+        var self = this;
+        understandApi.get('user/'+ user +'/repeat/')
+            .then(function(res) {
+                speechOutput = res.data;
+                self.emit(":ask", speechOutput, speechOutput);
+            }).catch(handleError.bind(self));
     },
     "understand": function () {
         var speechOutput = "";
@@ -71,19 +135,48 @@ var handlers = {
         console.log(mainSlot);
 
         var self = this;
-        var understandApi = axios.create({
-            baseURL: 'http://46.101.227.37:10000/openapi/',
-            timeout: 1000
-        });
         understandApi.get('dummy/mit einer Bratpfanne./')
             .then(function(res) {
-                // console.log('res: ', res.data);
-                // speechOutput =  res.data;
-                // this.emit(":ask", speechOutput, speechOutput);
                 self.emit(":ask", res.data, res.data);
                 return res.data;
             });
 
+    },
+    "translate": function () {
+        var speechOutput = "";
+        //any intent slot variables are listed here for convenience
+        var transSlotRaw = this.event.request.intent.slots.trans.value;
+        console.log(transSlotRaw);
+        var transSlot = resolveCanonical(this.event.request.intent.slots.trans);
+        console.log(transSlot);
+
+        //Your custom intent handling goes here
+        speechOutput = "This is a place holder response for the intent named translate. This intent has one slot, which is trans. Anything else?";
+        this.emit(":ask", speechOutput, speechOutput);
+    },
+    "yes": function () {
+        var speechOutput = "";
+        //any intent slot variables are listed here for convenience
+
+        speechOutput = "This is a place holder response for the intent named yes.";
+        this.emit(":ask", speechOutput, speechOutput);
+        var self = this;
+        understandApi.get('user/{user}/explain/resolve/yes/')
+            .then(function(res) {
+                speechOutput = res.data;
+                self.emit(":ask", speechOutput, speechOutput);
+                if (res.data && res.data.length === []){
+
+                }
+            }).catch(handleError);
+    },
+    "no": function () {
+        var speechOutput = "";
+        //any intent slot variables are listed here for convenience
+
+        //Your custom intent handling goes here
+        speechOutput = "This is a place holder response for the intent named no.";
+        this.emit(":ask", speechOutput, speechOutput);
     },
     'Unhandled': function () {
         speechOutput = "The skill didn't quite understand what you wanted.  Do you want to try something else?";
