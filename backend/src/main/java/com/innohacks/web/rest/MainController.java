@@ -62,7 +62,7 @@ public class MainController {
     }
 
     @GetMapping("/user/{user}/status/{status}")
-    public ResponseEntity postResult(@PathVariable("user") String user, @PathVariable("status") UserResultStatus status) {
+    public ResponseEntity getResult(@PathVariable("user") String user, @PathVariable("status") UserResultStatus status) {
         Optional<Sentence> optionalSentence = sentenceService.findASentenceWithStatus(user, status);
         if (optionalSentence.isPresent()) {
             return ResponseEntity.ok(optionalSentence.get().getSecondLanguage());
