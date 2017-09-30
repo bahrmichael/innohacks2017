@@ -23,11 +23,15 @@ A word is considered unknown, if the user has not marked it as known through `/o
 
 The application provides the following APIs:
 
-### GET /openapi/user/{user}/state/
+### /openapi/user/{user}/state/
+
+#### GET
 
 Returns the current state of the user. Can be either `onboarding`, `new_session` or `continue`. These states are used by lambda to determine the greeting text upon skill startup.
 
-### GET /openapi/user/{user}/repeat/
+### /openapi/user/{user}/repeat/
+
+#### GET
 
 Returns the latest sentence or list of unknown words depending on the `userContext` which can either be `sentence` or `explain`.
 
@@ -57,7 +61,7 @@ Returns the translation of the last sentence that was returned by /random/, whic
 
 This is the explain context. It provides more details on the previously selected sentence. You must have called any of the `sentence` URIs in advance.
 
-#### GET /
+#### GET
 
 Returns all unknown words of the recent sentence.
 
