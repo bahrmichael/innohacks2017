@@ -11,6 +11,8 @@ The provided application will serve lambda requests on /openapi/**. The applicat
 
 TBD
 
+TBD: Consider the sentence/explain states introduced during /repeat/ reduction.
+
 ## APIs
 
 The API always requires a user to operate on.
@@ -25,6 +27,14 @@ The application provides the following APIs:
 
 Returns the current state of the user. Can be either `onboarding`, `new_session` or `continue`. These states are used by lambda to determine the greeting text upon skill startup.
 
+### GET /openapi/user/{user}/repeat/
+
+Returns the latest sentence or list of unknown words depending on the `userContext` which can either be `sentence` or `explain`.
+
+The list of unknown words may be reduced by /resolve/{state}/.
+
+The context switch is done to reduce the number of intent and "just repeat the last thing" Alexa said.
+
 ### /openapi/user/{user}/sentence/
 
 This is the sentence context. When starting the app, the first call must be to `/random/` to pick a first sentence to learn on.
@@ -32,6 +42,8 @@ This is the sentence context. When starting the app, the first call must be to `
 #### GET /random/
 
 Returns a German sentence of which the user doesn't know one or more words.
+
+Sets the `userContext` to `sentence`.
 
 #### GET /next/
 
@@ -53,9 +65,7 @@ This is the explain context. It provides more details on the previously selected
 
 Returns all unknown words of the recent sentence.
 
-#### GET /repeat/
-
-Returns the unknown words of the recent sentence. The list may be reduced by /resolve/{state}/.
+Sets the `userContext` to `explain`.
 
 #### GET /resolve/{state}/
 
@@ -63,3 +73,5 @@ If state=yes, then the currently first unknown word is added to the user's known
 If state=no, then the currently first unknown word is not added to the user's known words.
 
 The API then removes the first element of the currently unknown words and returns the reduced list.
+
+Sets the `userContext` to `sentence` if there are no more remaining words in the reduced list.

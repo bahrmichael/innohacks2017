@@ -20,10 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/openapi")
 public class LanguageController {
 
+    private static final String SENTENCE = "sentence";
     private final LanguageService sentenceService;
     private Map<String, Sentence> recentSentenceOfUser = new HashMap<>();
     private Map<String, List<String>> recentUnknownWords = new HashMap<>();
     private Map<String, LocalDateTime> lastUserInteraction = new HashMap<>();
+    private Map<String, String> userState = new HashMap<>();
 
     public LanguageController(final LanguageService sentenceService) {
         this.sentenceService = sentenceService;
@@ -42,6 +44,7 @@ public class LanguageController {
     @GetMapping("/user/{user}/state/")
     public String getState(@PathVariable("user") String user) {
         LocalDateTime dateTime = lastUserInteraction.get(user);
+        lastUserInteraction.put(user, LocalDateTime.now());
         if (null == dateTime) {
             int count = sentenceService.countKnownWords(user);
             if (count > 0) {
@@ -63,6 +66,7 @@ public class LanguageController {
     @GetMapping("/user/{user}/sentence/random/")
     public ResponseEntity getUnknownSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
+        userState.put(user, SENTENCE);
 
         Optional<Sentence> optional = sentenceService.getUnknownSentenceForUser(user);
         if (optional.isPresent()) {
@@ -79,12 +83,6 @@ public class LanguageController {
         return getUnknownSentence(user);
     }
 
-    @GetMapping("/user/{user}/sentence/repeat/")
-    public ResponseEntity getRepeat(@PathVariable("user") String user) {
-        lastUserInteraction.put(user, LocalDateTime.now());
-        return ResponseEntity.ok(recentSentenceOfUser.get(user));
-    }
-
     @GetMapping("/user/{user}/sentence/translate/")
     public ResponseEntity getTranslationForRecentSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
@@ -94,17 +92,11 @@ public class LanguageController {
     @GetMapping("/user/{user}/explain/")
     public ResponseEntity getUnknownWordsForLastSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
+        userState.put(user, "explain");
 
         List<String> unknownWords = sentenceService.getUnknownWords(user, recentSentenceOfUser.get(user));
         recentUnknownWords.put(user, unknownWords);
         return ResponseEntity.ok(unknownWords);
-    }
-
-    @GetMapping("/user/{user}/explain/repeat/")
-    public ResponseEntity repeatLatestWord(@PathVariable("user") String user) {
-        lastUserInteraction.put(user, LocalDateTime.now());
-
-        return ResponseEntity.ok(recentUnknownWords.get(user));
     }
 
     @PostMapping("/user/{user}/explain/resolve/{state}/")
@@ -118,6 +110,21 @@ public class LanguageController {
         }
         List<String> subList = words.subList(1, words.size());
         recentUnknownWords.put(user, subList);
+        if (subList.isEmpty()) {
+            userState.put(user, SENTENCE);
+        }
         return ResponseEntity.ok(subList);
+    }
+
+    @GetMapping("/user/{user}/repeat/")
+    public ResponseEntity getRepeat(@PathVariable("user") String user) {
+        lastUserInteraction.put(user, LocalDateTime.now());
+        String state = userState.get(user);
+        if (SENTENCE.equals(state)) {
+            return ResponseEntity.ok(recentSentenceOfUser.get(user));
+        } else {
+            return ResponseEntity.ok(recentUnknownWords.get(user));
+        }
+
     }
 }
