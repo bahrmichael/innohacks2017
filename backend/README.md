@@ -67,7 +67,7 @@ Returns all unknown words of the recent sentence.
 
 Sets the `userContext` to `explain`.
 
-#### GET /resolve/{yesOrNo}/
+#### POST /resolve/{yesOrNo}/
 
 If `yesOrNo` is `yes`, then the currently first unknown word is added to the user's known words.
 If `yesOrNo` is `no`, then the currently first unknown word is not added to the user's known words.
