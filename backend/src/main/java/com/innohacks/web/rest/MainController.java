@@ -53,7 +53,7 @@ public class MainController {
         return sentenceService.getFlipSide(sentence);
     }
 
-    @PostMapping("/user/{user}/sentence/{sentence}/status/{status}/")
+//    @PostMapping("/user/{user}/sentence/{sentence}/status/{status}/")
     public ResponseEntity postResult(@PathVariable("user") String user, @PathVariable("sentence") String sentence, @PathVariable("status")
             UserResultStatus status) {
         Optional<Sentence> optionalSentence = sentenceService.findSentence(sentence);
@@ -66,7 +66,7 @@ public class MainController {
         }
     }
 
-    @GetMapping("/user/{user}/status/{status}/")
+//    @GetMapping("/user/{user}/status/{status}/")
     public ResponseEntity getResult(@PathVariable("user") String user, @PathVariable("status") UserResultStatus status) {
         Optional<Sentence> optionalSentence = sentenceService.findASentenceWithStatus(user, status);
         if (optionalSentence.isPresent()) {
@@ -76,19 +76,33 @@ public class MainController {
         }
     }
 
-    @GetMapping("/user/{user}/sentence/")
-    public ResponseEntity getResult(@PathVariable("user") String user) {
+
+
+
+
+    @GetMapping("/user/{user}/sentence/random/")
+    public ResponseEntity getUnknownSentence(@PathVariable("user") String user) {
         Sentence sentence = sentenceService.getUnknownSentenceForUser(user);
         recentSentenceOfUser.put(user, sentence);
         return ResponseEntity.ok(sentence.getGerman());
     }
 
-    @GetMapping("/user/{user}/last-sentence/")
-    public ResponseEntity getLastSentence(@PathVariable("user") String user) {
+    @GetMapping("/user/{user}/sentence/next/")
+    public ResponseEntity getResult(@PathVariable("user") String user) {
+        return getUnknownSentence(user);
+    }
+
+    @GetMapping("/user/{user}/sentence/repeat/")
+    public ResponseEntity getRepeat(@PathVariable("user") String user) {
         return ResponseEntity.ok(recentSentenceOfUser.get(user));
     }
 
-    @GetMapping("/user/{user}/last-sentence/unknown-words/")
+    @GetMapping("/user/{user}/sentence/translate/")
+    public ResponseEntity getTranslationForRecentSentence(@PathVariable("user") String user) {
+        return ResponseEntity.ok(recentSentenceOfUser.get(user).getEnglish());
+    }
+
+    @GetMapping("/user/{user}/explain/")
     public ResponseEntity getUnknownWordsForLastSentence(@PathVariable("user") String user) {
         List<String> unknownWords = sentenceService.getUnknownWords(user, recentSentenceOfUser.get(user));
         recentUnknownWords.put(user, unknownWords);
@@ -96,7 +110,30 @@ public class MainController {
         return ResponseEntity.ok(unknownWords);
     }
 
-    @GetMapping("/user/{user}/last-sentence/explain/current-word/")
+    @GetMapping("/user/{user}/explain/repeat/")
+    public ResponseEntity repeatLatestWord(@PathVariable("user") String user) {
+        return getUnknownWordsForLastSentence(user);
+    }
+
+    @PostMapping("/user/{user}/explain/resolve/{state}/")
+    public ResponseEntity resolveWord(@PathVariable("user") String user, @PathVariable("state") String state) {
+        List<String> words = recentUnknownWords.get(user);
+        String currentWord = words.get(0);
+        if ("yes".equalsIgnoreCase(state)) {
+            sentenceService.addUserKnownWord(currentWord, user);
+        }
+        List<String> subList = words.subList(1, words.size());
+        recentUnknownWords.put(user, subList);
+        return ResponseEntity.ok(subList);
+    }
+
+
+
+
+
+
+
+//    @GetMapping("/user/{user}/last-sentence/explain/current-word/")
     public ResponseEntity explainCurrentWord(@PathVariable("user") String user) {
         Integer index = recentUnknownWordCount.get(user);
         recentUnknownWordCount.put(user, index + 1);

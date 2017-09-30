@@ -134,4 +134,11 @@ public class SentenceService {
 
         return words;
     }
+
+    public void addUserKnownWord(final String currentWord, final String user) {
+        UserKnownWord word = new UserKnownWord();
+        word.setUser(user);
+        word.setWord(currentWord.toLowerCase());
+        userKnownWordsRepository.save(word);
+    }
 }
