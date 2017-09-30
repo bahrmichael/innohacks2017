@@ -36,12 +36,8 @@ public class LanguageService {
 
     private int getTotalCount() {
         if (null == totalCount) {
-            try {
-                totalCount = Math.toIntExact(sentenceRepository.count());
-            } catch (ArithmeticException e) {
-                log.warn("Exceeded max int.", e);
-                totalCount = Integer.MAX_VALUE;
-            }
+            totalCount = 1000;
+//            totalCount = (int) sentenceRepository.count();
         }
         return totalCount;
     }
