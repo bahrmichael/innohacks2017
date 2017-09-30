@@ -7,11 +7,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import com.innohacks.domain.Sentence;
 import com.innohacks.domain.UserKnownWord;
-import com.innohacks.domain.UserResult;
-import com.innohacks.domain.UserResultStatus;
 import com.innohacks.repository.SentenceRepository;
 import com.innohacks.repository.UserKnownWordsRepository;
-import com.innohacks.repository.UserResultRepository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,22 +18,19 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 @Service
-public class SentenceService {
+public class LanguageService {
 
-    private final Logger log = LoggerFactory.getLogger(SentenceService.class);
+    private final Logger log = LoggerFactory.getLogger(LanguageService.class);
 
     private final SentenceRepository sentenceRepository;
-    private final UserResultRepository userResultRepository;
     private final UserKnownWordsRepository userKnownWordsRepository;
 
     private Integer totalCount = null;
 
     @Autowired
-    public SentenceService(final SentenceRepository sentenceRepository,
-                           final UserResultRepository userResultRepository,
+    public LanguageService(final SentenceRepository sentenceRepository,
                            final UserKnownWordsRepository userKnownWordsRepository) {
         this.sentenceRepository = sentenceRepository;
-        this.userResultRepository = userResultRepository;
         this.userKnownWordsRepository = userKnownWordsRepository;
     }
 
@@ -59,7 +53,7 @@ public class SentenceService {
         return result.getContent().get(0);
     }
 
-    public String getFlipSide(final String sentence) {
+    public String getTranslation(final String sentence) {
         Optional<Sentence> firstSide = sentenceRepository.findOneByFirstLanguage(sentence);
         if (firstSide.isPresent()) {
             return firstSide.get().getGerman();
@@ -74,38 +68,27 @@ public class SentenceService {
         }
     }
 
-    public Optional<Sentence> findSentence(final String sentence) {
-        Optional<Sentence> firstSide = sentenceRepository.findOneByFirstLanguage(sentence);
-        if (firstSide.isPresent()) {
-            return firstSide;
-        } else {
-            return sentenceRepository.findOneBySecondLanguage(sentence);
-        }
-    }
-
-    public Optional<Sentence> findASentenceWithStatus(final String user, final UserResultStatus status) {
-        int random = ThreadLocalRandom.current().nextInt(userResultRepository.countByUserAndStatus(user, status));
-        PageRequest request = new PageRequest(random, 1);
-        Page<UserResult> all = userResultRepository.findAll(request);
-        UserResult userResult = all.getContent().get(0);
-        return Optional.of(sentenceRepository.findOne(userResult.getId()));
-    }
-
-    public Sentence getUnknownSentenceForUser(final String user) {
+    public Optional<Sentence> getUnknownSentenceForUser(final String user) {
         List<UserKnownWord> knownWords = userKnownWordsRepository.findByUser(user);
 
         int count = 0;
 
+        // dirty fix: allow max 10 000 retries before returning an empty result
+        int maxTries = 10000;
+
         Sentence randomSentence = null;
         while (count == 0) {
-            // todo mba: fix possible endless loop
             randomSentence = getRandomSentence();
             String germanSentence = randomSentence.getGerman();
 
             count = countUnknownWords(germanSentence, knownWords);
+
+            if (0 <= maxTries--) {
+                return Optional.empty();
+            }
         }
 
-        return randomSentence;
+        return Optional.of(randomSentence);
     }
 
     private int countUnknownWords(final String sentence, final List<UserKnownWord> knownWords) {
