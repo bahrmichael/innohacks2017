@@ -21,6 +21,8 @@ The URI has the two sections `sentence` and `explain` as explained in the state 
 
 A word is considered unknown, if the user has not marked it as known through `/openapi/user/{user}/explain/resolve/{state}/`
 
+APIs that are protected by `STATE_CHECK` will check if the current section for the user is correct. APIs may return `section_sentence_required` or `section_explain_required`.  
+
 The application provides the following APIs:
 
 ### /openapi/user/{user}/state/
@@ -55,6 +57,8 @@ See /random/.
 
 #### GET /translate/
 
+Protected by `STATE_CHECK`.
+
 Returns the translation of the last sentence that was returned by /random/, which must have been called first.
 
 ### /openapi/user/{user}/explain/
@@ -63,11 +67,15 @@ This is the explain context. It provides more details on the previously selected
 
 #### GET
 
+Protected by `STATE_CHECK`.
+
 Returns all unknown words of the recent sentence.
 
 Sets the `userContext` to `explain`.
 
 #### POST /resolve/{yesOrNo}/
+
+Protected by `STATE_CHECK`.
 
 If `yesOrNo` is `yes`, then the currently first unknown word is added to the user's known words.
 If `yesOrNo` is `no`, then the currently first unknown word is not added to the user's known words.
