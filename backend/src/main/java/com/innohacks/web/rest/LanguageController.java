@@ -125,7 +125,11 @@ public class LanguageController {
     }
 
     private boolean hasNoState(final String user) {
-        return userSection.get(user) == null;
+        boolean hasNoState = userSection.get(user) == null;
+        if (hasNoState) {
+            userSection.put(user, INIT);
+        }
+        return hasNoState;
     }
 
     private boolean isExplainState(final String user) {
