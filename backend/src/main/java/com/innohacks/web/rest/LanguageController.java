@@ -56,7 +56,7 @@ public class LanguageController {
         return dateTime.isAfter(LocalDateTime.now().minusMinutes(30));
     }
 
-    @GetMapping("/user/{user}/sentence/random/")
+    @GetMapping("/user/{user}/sentence/next/")
     public ResponseEntity getUnknownSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
         userSection.put(user, SENTENCE);
@@ -69,11 +69,6 @@ public class LanguageController {
         } else {
             return ResponseEntity.notFound().build();
         }
-    }
-
-    @GetMapping("/user/{user}/sentence/next/")
-    public ResponseEntity getResult(@PathVariable("user") String user) {
-        return getUnknownSentence(user);
     }
 
     @GetMapping("/user/{user}/sentence/translate/")

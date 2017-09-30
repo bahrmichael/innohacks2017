@@ -43,23 +43,19 @@ The context switch is done to reduce the number of intent and "just repeat the l
 
 ### /openapi/user/{user}/sentence/
 
-This is the sentence context. When starting the app, the first call must be to `/random/` to pick a first sentence to learn on.
+This is the sentence context. When starting the app, the first call must be to `/next/` to pick a first sentence to learn on.
 
-#### GET /random/
+#### GET /next/
 
 Returns a German sentence of which the user doesn't know one or more words.
 
 Sets the `userContext` to `sentence`.
 
-#### GET /next/
-
-See /random/.
-
 #### GET /translate/
 
 Protected by `STATE_CHECK`.
 
-Returns the translation of the last sentence that was returned by /random/, which must have been called first.
+Returns the translation of the last sentence that was returned by `/next/`, which must have been called first.
 
 ### /openapi/user/{user}/explain/
 
