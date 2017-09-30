@@ -23,8 +23,7 @@ public class LanguageController {
 
     private static final String EXPLAIN = "explain";
     private static final String SENTENCE = "sentence";
-    private static final String SECTION_SENTENCE_REQUIRED = "section_sentence_required";
-    private static final String SECTION_EXPLAIN_REQUIRED = "section_explain_required";
+    private static final String INIT = "init";
     private final LanguageService sentenceService;
     private Map<String, Sentence> recentSentenceOfUser = new HashMap<>();
     private Map<String, List<String>> recentUnknownWords = new HashMap<>();
@@ -75,8 +74,10 @@ public class LanguageController {
     @GetMapping("/user/{user}/sentence/translate/")
     public ResponseEntity getTranslationForRecentSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
-        if (hasNoState(user) || !isSentenceSection(user)) {
-            return ResponseEntity.status(412).body(new SectionError(SECTION_SENTENCE_REQUIRED, userSection.get(user)));
+        if (hasNoState(user)) {
+            return ResponseEntity.status(412).body(new SectionError(INIT, userSection.get(user)));
+        } else if (!isSentenceSection(user)) {
+            return ResponseEntity.status(412).body(new SectionError(SENTENCE, userSection.get(user)));
         }
         return ResponseEntity.ok(recentSentenceOfUser.get(user).getEnglish());
     }
@@ -88,8 +89,10 @@ public class LanguageController {
     @GetMapping("/user/{user}/explain/")
     public ResponseEntity getUnknownWordsForLastSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
-        if (hasNoState(user) || !isSentenceSection(user)) {
-            return ResponseEntity.status(412).body(new SectionError(SECTION_SENTENCE_REQUIRED, userSection.get(user)));
+        if (hasNoState(user)) {
+            return ResponseEntity.status(412).body(new SectionError(INIT, userSection.get(user)));
+        } else if (!isSentenceSection(user)) {
+            return ResponseEntity.status(412).body(new SectionError(SENTENCE, userSection.get(user)));
         }
 
         userSection.put(user, EXPLAIN);
@@ -103,9 +106,9 @@ public class LanguageController {
     public ResponseEntity resolveWord(@PathVariable("user") String user, @PathVariable("yesOrNo") String state) {
         lastUserInteraction.put(user, LocalDateTime.now());
         if (hasNoState(user)) {
-            return ResponseEntity.status(412).body(new SectionError(SECTION_SENTENCE_REQUIRED, userSection.get(user)));
+            return ResponseEntity.status(412).body(new SectionError(INIT, userSection.get(user)));
         } else if (!isExplainState(user)) {
-            return ResponseEntity.status(412).body(new SectionError(SECTION_EXPLAIN_REQUIRED, userSection.get(user)));
+            return ResponseEntity.status(412).body(new SectionError(EXPLAIN, userSection.get(user)));
         }
 
         List<String> words = recentUnknownWords.get(user);
