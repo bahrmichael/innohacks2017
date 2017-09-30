@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,10 +21,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/openapi")
 public class LanguageController {
 
+    private static final String EXPLAIN = "explain";
     private static final String SENTENCE = "sentence";
     private static final String SECTION_SENTENCE_REQUIRED = "section_sentence_required";
     private static final String SECTION_EXPLAIN_REQUIRED = "section_explain_required";
-    public static final String EXPLAIN = "explain";
     private final LanguageService sentenceService;
     private Map<String, Sentence> recentSentenceOfUser = new HashMap<>();
     private Map<String, List<String>> recentUnknownWords = new HashMap<>();
@@ -75,7 +76,7 @@ public class LanguageController {
     public ResponseEntity getTranslationForRecentSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
         if (isAnyState(user) || !isSentenceSection(user)) {
-            return ResponseEntity.status(412).body(SECTION_SENTENCE_REQUIRED);
+            return ResponseEntity.status(412).body(new SectionError(SECTION_SENTENCE_REQUIRED, userSection.get(user)));
         }
         return ResponseEntity.ok(recentSentenceOfUser.get(user).getEnglish());
     }
@@ -88,9 +89,9 @@ public class LanguageController {
     public ResponseEntity getUnknownWordsForLastSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
         if (isAnyState(user)) {
-            return ResponseEntity.status(412).body(SECTION_SENTENCE_REQUIRED);
+            return ResponseEntity.status(412).body(new SectionError(SECTION_SENTENCE_REQUIRED, userSection.get(user)));
         } else if (!isExplainState(user)) {
-            return ResponseEntity.status(412).body(SECTION_EXPLAIN_REQUIRED);
+            return ResponseEntity.status(412).body(new SectionError(SECTION_EXPLAIN_REQUIRED, userSection.get(user)));
         }
 
         userSection.put(user, EXPLAIN);
@@ -104,9 +105,9 @@ public class LanguageController {
     public ResponseEntity resolveWord(@PathVariable("user") String user, @PathVariable("yesOrNo") String state) {
         lastUserInteraction.put(user, LocalDateTime.now());
         if (isAnyState(user)) {
-            return ResponseEntity.status(412).body(SECTION_SENTENCE_REQUIRED);
+            return ResponseEntity.status(412).body(new SectionError(SECTION_SENTENCE_REQUIRED, userSection.get(user)));
         } else if (!isExplainState(user)) {
-            return ResponseEntity.status(412).body(SECTION_EXPLAIN_REQUIRED);
+            return ResponseEntity.status(412).body(new SectionError(SECTION_EXPLAIN_REQUIRED, userSection.get(user)));
         }
 
         List<String> words = recentUnknownWords.get(user);
@@ -145,6 +146,11 @@ public class LanguageController {
         } else {
             return ResponseEntity.ok(recentUnknownWords.get(user));
         }
+    }
 
+    @PostMapping("/sentences/")
+    public ResponseEntity postSentences(@RequestBody Sentence sentence) {
+        sentenceService.add(sentence);
+        return ResponseEntity.ok().build();
     }
 }

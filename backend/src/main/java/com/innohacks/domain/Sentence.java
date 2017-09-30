@@ -1,34 +1,22 @@
 package com.innohacks.domain;
 
-import org.springframework.data.annotation.Id;
-
 public class Sentence {
-    @Id
-    private String id;
-    private String firstLanguage;
-    private String secondLanguage;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(final String id) {
-        this.id = id;
-    }
+    private String english;
+    private String german;
 
     public String getEnglish() {
-        return firstLanguage;
+        return english;
     }
 
-    public void setEnglish(final String firstLanguage) {
-        this.firstLanguage = firstLanguage;
+    public void setEnglish(final String english) {
+        this.english = english;
     }
 
     public String getGerman() {
-        return secondLanguage;
+        return german;
     }
 
-    public void getGerman(final String secondLanguage) {
-        this.secondLanguage = secondLanguage;
+    public void getGerman(final String german) {
+        this.german = german;
     }
 }

@@ -36,8 +36,8 @@ public class LanguageService {
 
     private int getTotalCount() {
         if (null == totalCount) {
-            totalCount = 1000;
-//            totalCount = (int) sentenceRepository.count();
+            long count = sentenceRepository.count();
+            totalCount = (int) count;
         }
         return totalCount;
     }
@@ -50,11 +50,11 @@ public class LanguageService {
     }
 
     public String getTranslation(final String sentence) {
-        Optional<Sentence> firstSide = sentenceRepository.findOneByFirstLanguage(sentence);
+        Optional<Sentence> firstSide = sentenceRepository.findOneByEnglish(sentence);
         if (firstSide.isPresent()) {
             return firstSide.get().getGerman();
         } else {
-            Optional<Sentence> secondSide = sentenceRepository.findOneBySecondLanguage(sentence);
+            Optional<Sentence> secondSide = sentenceRepository.findOneByGerman(sentence);
             if (secondSide.isPresent()) {
                 return secondSide.get().getEnglish();
             } else {
@@ -79,7 +79,7 @@ public class LanguageService {
 
             count = countUnknownWords(germanSentence, knownWords);
 
-            if (0 <= maxTries--) {
+            if (0 == maxTries--) {
                 return Optional.empty();
             }
         }
@@ -96,7 +96,8 @@ public class LanguageService {
     }
 
     private List<String> getUnknownWords(final String sentence, final List<UserKnownWord> knownWords) {
-        List<String> words = new ArrayList<>();
+
+        List<String> knownWordsOfSentence = new ArrayList<>();
 
         String[] sentenceWords = sentence.split("\\W+");
         for (String sentenceWord : sentenceWords) {
@@ -105,9 +106,16 @@ public class LanguageService {
             }
 
             for (UserKnownWord knownWord : knownWords) {
-                if (!sentenceWord.equalsIgnoreCase(knownWord.getWord())) {
-                    words.add(sentenceWord);
+                if (sentenceWord.equalsIgnoreCase(knownWord.getWord())) {
+                    knownWordsOfSentence.add(sentenceWord);
                 }
+            }
+        }
+
+        List<String> words = new ArrayList<>();
+        for (String sentenceWord : sentenceWords) {
+            if (!knownWordsOfSentence.contains(sentenceWord)) {
+                words.add(sentenceWord);
             }
         }
 
@@ -123,5 +131,13 @@ public class LanguageService {
 
     public int countKnownWords(final String user) {
         return userKnownWordsRepository.countByUser(user);
+    }
+
+    public void addAll(final List<Sentence> sentences) {
+        sentenceRepository.save(sentences);
+    }
+
+    public void add(final Sentence sentence) {
+        sentenceRepository.save(sentence);
     }
 }
