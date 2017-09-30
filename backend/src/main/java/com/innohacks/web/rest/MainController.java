@@ -27,28 +27,27 @@ public class MainController {
         this.userResultService = userResultService;
     }
 
-    @GetMapping("/dummy")
+    @GetMapping("/dummy/")
     public String dummy() {
         return "Hallo Welt!";
     }
 
-    @GetMapping("/dummy/{sentence}")
+    @GetMapping("/dummy/{sentence}/")
     public String dummyLong(@PathVariable("sentence") String sentence) {
         return sentence;
     }
 
-    @GetMapping("/sentence/random")
+    @GetMapping("/sentence/random/")
     public String getRandomSentence() {
         return sentenceService.getRandomSentence().getFirstLanguage();
     }
 
-    @GetMapping("/sentence/{sentence}/flip")
+    @GetMapping("/sentence/{sentence}/translate/")
     public String flipSentence(@PathVariable("sentence") String sentence) {
-        // todo: we might need to url decode the sentence
         return sentenceService.getFlipSide(sentence);
     }
 
-    @PostMapping("/user/{user}/sentence/{sentence}/status/{status}")
+    @PostMapping("/user/{user}/sentence/{sentence}/status/{status}/")
     public ResponseEntity postResult(@PathVariable("user") String user, @PathVariable("sentence") String sentence, @PathVariable("status")
             UserResultStatus status) {
         Optional<Sentence> optionalSentence = sentenceService.findSentence(sentence);
@@ -61,7 +60,7 @@ public class MainController {
         }
     }
 
-    @GetMapping("/user/{user}/status/{status}")
+    @GetMapping("/user/{user}/status/{status}/")
     public ResponseEntity getResult(@PathVariable("user") String user, @PathVariable("status") UserResultStatus status) {
         Optional<Sentence> optionalSentence = sentenceService.findASentenceWithStatus(user, status);
         if (optionalSentence.isPresent()) {
@@ -71,7 +70,7 @@ public class MainController {
         }
     }
 
-    @GetMapping("/user/{user}/sentence")
+    @GetMapping("/user/{user}/sentence/")
     public ResponseEntity getResult(@PathVariable("user") String user) {
         // todo miro
         return ResponseEntity.ok().build();
