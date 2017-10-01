@@ -44,7 +44,7 @@ var toGermanSpeech = function(text, context) {
                                     console.log(data);
                                     var url = 'https://s3-eu-west-1.amazonaws.com/innohacks2017/audio.mp3';
                                     var ssml = '<audio src="' + url + '" />';
-                                    self.emit(':ask', ssml, 'reprompt');
+                                    context.emit(':ask', ssml, 'reprompt');
                                 }           // successful response
                             });
                         }
@@ -72,7 +72,7 @@ var APP_ID = undefined;  // TODO replace with your app ID (OPTIONAL).
 var speechOutput = '';
 var handlers = {
     'LaunchRequest': function () {
-        // welcomeOutput = toGermanSpeech(welcomeOutput);
+        // toGermanSpeech("Guten Tag! Heute lernen wir Deutsch.", this);
         this.emit(':ask', welcomeOutput, welcomeReprompt);
         // toGermanSpeech(welcomeOutput, this);
     },
@@ -143,8 +143,8 @@ var handlers = {
         var self = this;
         understandApi.get('user/'+ user +'/sentence/next/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data, this);
-                console.log('speechOutput: ', speechOutput);
+                // console.log('speechOutput: ', speechOutput);
+                toGermanSpeech(res.data, self);
                 // self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
     },
@@ -159,7 +159,7 @@ var handlers = {
         var self = this;
         understandApi.get('dummy/mit einer Bratpfanne./')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data, this);
+                speechOutput = toGermanSpeech(res.data, self);
                 // self.emit(":ask", speechOutput, speechOutput);
                 return res.data;
             });
@@ -176,7 +176,7 @@ var handlers = {
         var self = this;
         understandApi.get('user/'+ user +'/sentence/translate/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data, this);
+                speechOutput = toGermanSpeech(res.data, self);
                 // self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
     },
@@ -189,7 +189,7 @@ var handlers = {
         var self = this;
         understandApi.post('user/'+ user +'/explain/resolve/yes/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data, this);
+                speechOutput = toGermanSpeech(res.data, self);
                 self.emit(":ask", speechOutput, speechOutput);
 
                 if (res.data && res.data.length === []){
@@ -198,7 +198,7 @@ var handlers = {
 
                     understandApi.get('user/'+ user +'/sentence/repeat/')
                         .then(function(res) {
-                            speechOutput = toGermanSpeech(res.data, this);
+                            speechOutput = toGermanSpeech(res.data, self);
                             // self.emit(":ask", speechOutput, speechOutput);
                         }).catch(handleError.bind(self));
                 }
@@ -211,7 +211,7 @@ var handlers = {
         var self = this;
         understandApi.post('user/'+ user +'/explain/resolve/no/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data, this);
+                speechOutput = toGermanSpeech(res.data, self);
                 // self.emit(":ask", speechOutput, speechOutput);
 
                 if (res.data && res.data.length === []){
@@ -220,7 +220,7 @@ var handlers = {
 
                     understandApi.get('user/'+ user +'/sentence/repeat/')
                         .then(function(res) {
-                            speechOutput = toGermanSpeech(res.data, this);
+                            speechOutput = toGermanSpeech(res.data, self);
                             // self.emit(":ask", speechOutput, speechOutput);
                         }).catch(handleError.bind(self));
                 }
