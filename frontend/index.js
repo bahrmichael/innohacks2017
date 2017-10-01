@@ -17,7 +17,6 @@ var handleError = function(error) {
 };
 var AWS = require("aws-sdk");
 var toGermanSpeech = function(text, context) {
-    var self = context;
     var polly = new AWS.Polly();
     polly.synthesizeSpeech({
         TextType: 'text',
@@ -133,7 +132,6 @@ var handlers = {
             }).catch(handleError.bind(self));
     },
     "start": function () {
-        var speechOutput = "";
         //any intent slot variables are listed here for convenience
         var mainSlotRaw = this.event.request.intent.slots.main.value;
         console.log(mainSlotRaw);
@@ -176,7 +174,7 @@ var handlers = {
         var self = this;
         understandApi.get('user/'+ user +'/sentence/translate/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data, self);
+                toGermanSpeech(res.data, self);
                 // self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
     },
@@ -189,18 +187,18 @@ var handlers = {
         var self = this;
         understandApi.post('user/'+ user +'/explain/resolve/yes/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data, self);
-                self.emit(":ask", speechOutput, speechOutput);
 
                 if (res.data && res.data.length === []){
-                    speechOutput = "No more new words";
+                    // speechOutput = "No more new words";
                     // self.emit(":ask", speechOutput, speechOutput);
 
                     understandApi.get('user/'+ user +'/sentence/repeat/')
                         .then(function(res) {
-                            speechOutput = toGermanSpeech(res.data, self);
+                            toGermanSpeech(res.data, self);
                             // self.emit(":ask", speechOutput, speechOutput);
                         }).catch(handleError.bind(self));
+                } else {
+                    toGermanSpeech(res.data, self);
                 }
             }).catch(handleError.bind(self));
     },
@@ -211,18 +209,19 @@ var handlers = {
         var self = this;
         understandApi.post('user/'+ user +'/explain/resolve/no/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data, self);
                 // self.emit(":ask", speechOutput, speechOutput);
 
                 if (res.data && res.data.length === []){
-                    speechOutput = "No more new words";
-                    self.emit(":ask", speechOutput, speechOutput);
+                    // speechOutput = "No more new words";
+                    // self.emit(":ask", speechOutput, speechOutput);
 
                     understandApi.get('user/'+ user +'/sentence/repeat/')
                         .then(function(res) {
-                            speechOutput = toGermanSpeech(res.data, self);
+                            toGermanSpeech(res.data, self);
                             // self.emit(":ask", speechOutput, speechOutput);
                         }).catch(handleError.bind(self));
+                } else {
+                    toGermanSpeech(res.data, self);
                 }
             }).catch(handleError.bind(self));
     },
