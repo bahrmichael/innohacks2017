@@ -101,7 +101,7 @@ var handlers = {
         var self = this;
         understandApi.get('user/{user}/explain/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data, this);
+                toGermanSpeech(res.data, self);
                 // self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
     },
@@ -117,7 +117,7 @@ var handlers = {
         var self = this;
         understandApi.get('user/'+ user +'/repeat/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data, this);
+                toGermanSpeech(res.data, self);
                 // self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
 
@@ -128,7 +128,7 @@ var handlers = {
         var self = this;
         understandApi.get('user/'+ user +'/sentence/next/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data, self);
+                toGermanSpeech(res.data, self);
                 // self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
     },
