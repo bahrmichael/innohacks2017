@@ -5,7 +5,7 @@ are just a tiny step behind your current level. It keeps track of the
 vocabulary you already know and helps you to progress.
 
 <h3 align="center">
-    <img src="https://raw.githubusercontent.com/bahrmichael/innohacks2017/master/lingling.dot.svg?sanitize=true">
+    <img src="https://raw.githubusercontent.com/bahrmichael/innohacks2017/master/lingling.svg?sanitize=true">
 </h3>
 
 ## Table of contents
