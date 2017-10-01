@@ -21,9 +21,9 @@ var toSpeech = function(text) {
         TextType: 'text',
         OutputFormat: 'mp3',
         VoiceId: 'Vickie',
-        Text: outputText
+        Text: text
     });
-    return '<speak><audio src="' + url + '" /></speak>'
+    return '<audio src="' + url + '" />'
 };
 
 var notAllowed = 'This option is not allowed.';
