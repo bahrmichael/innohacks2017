@@ -17,7 +17,6 @@ digraph G {
         sys_know_word [label="Do we need\nto check more words?"];
         alexa_freq_intro [label="Tell me for each\nof the following words\nwhether you understand it\nor not", color=lightblue, style=filled];
         alexa_freq_word [label="(Word in German)", color=lightblue, style=filled];
-        alexa_finish_onboarding [label="I think you know\naround %d words in German.\nThat can be improved!", color=lightblue, style=filled];
         user_freq_yes [label="yes", color=yellow, style=filled];
         user_freq_no [label="no", color=yellow, style=filled];
 
@@ -26,14 +25,13 @@ digraph G {
         alexa_freq_intro -> sys_freq_word -> alexa_freq_word;
         alexa_freq_word -> {user_freq_yes, user_freq_no} -> sys_know_word;
         sys_know_word -> sys_freq_word [label="TRUE"];
-        sys_know_word -> alexa_finish_onboarding [label="FALSE"];
 
     };
     subgraph cluster_sentence {
         label="sentences context";
         sys_choose_lang -> alexa_start_sentences [label="TRUE"];
         sys_new_sentence [label="Get a new random sentence pair\nwith X new words"];
-        alexa_start_sentences [label="Let's start practicing German", color=lightblue, style=filled];
+        alexa_start_sentences [label="I think you know\naround %d words in German.\nThat can be improved.\nLet's start practicing!", color=lightblue, style=filled];
         alexa_sentence_dst [label="(Sentence in German)", color=lightblue, style=filled];
         alexa_sentence_src [label="(Sentence in English)", color=lightblue, style=filled];
         user_next [label="next", color=yellow, style=filled];
@@ -42,10 +40,10 @@ digraph G {
         user_explain [label="explain", color=yellow, style=filled];
         user_easy [label="easy", color=yellow, style=filled];
 
+        sys_know_word -> alexa_start_sentences [label="FALSE", weight=0];
         sys_easy [label="Add all new words\nto known words"];
 
 
-        alexa_finish_onboarding -> alexa_start_sentences [weight=0];
         alexa_start_sentences -> sys_new_sentence -> alexa_sentence_dst;
         {alexa_sentence_dst, alexa_sentence_src} -> user_translate -> alexa_sentence_src;
         {alexa_sentence_dst, alexa_sentence_src} -> user_repeat_sentence -> alexa_sentence_dst;
