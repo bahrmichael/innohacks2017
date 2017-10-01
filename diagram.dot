@@ -1,0 +1,75 @@
+digraph G {
+
+
+    subgraph cluster_start {
+    label="start";
+        alexa_welcome [label="Welcome to the vocabulary trainer!\nWhich language do you want to practice?", color=lightblue, style="filled", start=true];
+        user_choose_lang [label="German", color=yellow, style=filled];
+        sys_choose_lang [label="Already practiced by user?"];
+        alexa_welcome -> user_choose_lang -> sys_choose_lang;
+    };
+
+
+
+    subgraph cluster_onboarding {
+        label="onboarding context";
+        sys_freq_word [label="Get a word\nfrom the frequency list"];
+        sys_know_word [label="Do we need\nto check more words?"];
+        alexa_freq_intro [label="Tell me for each\nof the following words\nwhether you understand it\nor not", color=lightblue, style=filled];
+        alexa_freq_word [label="(Word in German)", color=lightblue, style=filled];
+        user_freq_yes [label="yes", color=yellow, style=filled];
+        user_freq_no [label="no", color=yellow, style=filled];
+
+        sys_choose_lang -> alexa_freq_intro [label="FALSE"];
+
+        alexa_freq_intro -> sys_freq_word -> alexa_freq_word;
+        alexa_freq_word -> {user_freq_yes, user_freq_no} -> sys_know_word;
+        sys_know_word -> sys_freq_word [label="TRUE"];
+
+    };
+    subgraph cluster_sentence {
+        label="sentences context";
+        sys_choose_lang -> alexa_start_sentences [label="TRUE"];
+        sys_new_sentence [label="Get a new random sentence pair\nwith X new words"];
+        alexa_start_sentences [label="I think you know\naround %d words in German.\nThat can be improved.\nLet's start practicing!", color=lightblue, style=filled];
+        alexa_sentence_dst [label="(Sentence in German)", color=lightblue, style=filled];
+        alexa_sentence_src [label="(Sentence in English)", color=lightblue, style=filled];
+        user_next [label="next", color=yellow, style=filled];
+        user_translate [label="translate", color=yellow, style=filled];
+        user_repeat_sentence [label="repeat", color=yellow, style=filled];
+        user_explain [label="explain", color=yellow, style=filled];
+        user_easy [label="easy", color=yellow, style=filled];
+
+        sys_know_word -> alexa_start_sentences [label="FALSE", weight=0];
+        sys_easy [label="Add all new words\nto known words"];
+
+
+        alexa_start_sentences -> sys_new_sentence -> alexa_sentence_dst;
+        {alexa_sentence_dst, alexa_sentence_src} -> user_translate -> alexa_sentence_src;
+        {alexa_sentence_dst, alexa_sentence_src} -> user_repeat_sentence -> alexa_sentence_dst;
+        {alexa_sentence_dst, alexa_sentence_src} -> user_next -> sys_new_sentence;
+        {alexa_sentence_dst, alexa_sentence_src} -> user_easy -> sys_easy -> sys_new_sentence;
+        {alexa_sentence_dst, alexa_sentence_src} -> user_explain;
+    };
+    subgraph cluster_words {
+        label="words context";
+        alexa_words_intro [label="There are %d new words\nin this sentence", color=lightblue, style=filled];
+        sys_new_word [label="Get next new word\nin the current sentence?"];
+        sys_add_word [label="Add word\nto known words"];
+        alexa_new_word [label="(Word in German,\nWord in English)", color=lightblue, style=filled];
+        user_explain -> alexa_words_intro -> sys_new_word;
+        sys_new_word -> alexa_sentence_dst [label="FALSE"];
+        sys_new_word -> alexa_new_word [label="TRUE"];
+
+        user_yes [label="yes", color=yellow, style=filled];
+        user_no [label="no", color=yellow, style=filled];
+        user_sentence [label="sentence", color=yellow, style=filled];
+        user_repeat_word [label="repeat", color=yellow, style=filled];
+
+        alexa_new_word -> user_repeat_word -> alexa_new_word;
+        alexa_new_word -> user_sentence -> alexa_sentence_dst;
+        alexa_new_word -> user_yes -> sys_add_word -> sys_new_word;
+        alexa_new_word -> user_no -> sys_new_word;
+
+    };
+}
