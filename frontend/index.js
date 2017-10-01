@@ -128,7 +128,7 @@ var handlers = {
         var self = this;
         understandApi.get('user/'+ user +'/sentence/next/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data, this);
+                speechOutput = toGermanSpeech(res.data, self);
                 // self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
     },
