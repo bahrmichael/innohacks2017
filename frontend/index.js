@@ -13,8 +13,6 @@ var handleError = function(error) {
     self.emit(":ask", speechOutput, speechOutput);
     // return speechOutput;
 };
-const Fs = require("fs");
-var ffmpeg = require('ffmpeg');
 var AWS = require("aws-sdk");
 var toGermanSpeech = function(text, context) {
     var self = context;
@@ -23,7 +21,6 @@ var toGermanSpeech = function(text, context) {
         TextType: 'text',
         OutputFormat: 'mp3',
         VoiceId: 'Vicki',
-        SampleRate: '16000',
         Text: text
     }, function(err, data) {
         if (err) console.log(err, err.stack); // an error occurred
@@ -32,23 +29,6 @@ var toGermanSpeech = function(text, context) {
             console.log(speech);
 
             if (data.AudioStream instanceof Buffer) {
-                // Fs.writeFile("/tmp/speech.mp3", data.AudioStream, function(err) {
-                // if (err) {
-                //     return console.log(err)
-                // }
-                // console.log("The file was saved!");
-                //
-                // try {
-                //     var process = new ffmpeg('/tmp/speech.mp3');
-                //     process.then(function (video) {
-                //         // Callback mode
-                //         video.setAudioBitRate(16);
-                //         video.setAudioFrequency(48);
-                //         video.fnExtractSoundToMP3('/tmp/audio.mp3', function (error, file) {
-                //             if (!error)
-                //                 console.log('Audio file: ' + file);
-                //
-                //             var data = Fs.readFileSync('/tmp/audio.mp3');
                             var params = {
                                 Body: data.AudioStream,
                                 Bucket: "innohacks2017",
@@ -64,40 +44,10 @@ var toGermanSpeech = function(text, context) {
                                     var ssml = '<audio src="' + url + '" />';
                                     self.emit(':ask', ssml, 'reprompt');
                                 }           // successful response
-                                /*
-                                data = {
-                                 ETag: "\"6805f2cfc46c0f04559748bb039d69ae\"",
-                                 VersionId: "Bvq0EDKxOcXLJXNo_Lkz37eM3R4pfzyQ"
-                                }
-                                */
                             });
                         }
-
-                //         );
-                //     }, function (err) {
-                //         console.log('Error: ' + err);
-                //     });
-                // } catch (e) {
-                //     console.log(e.code);
-                //     console.log(e.msg);
-                // }
-
-
-
-            // var url = "https://s3-eu-west-1.amazonaws.com/innohacks2017/file.mp3";
             return 'this is not a valid result'
-            // return "<say-as interpret-as=\"spell-out\">hello</say-as>";
-                }
-                // )
-            // }
-        // }           // successful response
-        /*
-        data = {
-         AudioStream: <Binary String>,
-         ContentType: "audio/mpeg",
-         RequestCharacters: 37
-        }
-        */
+            }
     });
 
 
