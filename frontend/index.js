@@ -15,7 +15,7 @@ var handleError = function(error) {
 };
 
 var AWS = require("aws-sdk");
-var toSpeech = function(text) {
+var toGermanSpeech = function(text) {
     var presigner = new AWS.Polly.Presigner();
     var url = presigner.getSynthesizeSpeechUrl({
         TextType: 'text',
@@ -30,7 +30,8 @@ var notAllowed = 'This option is not allowed.';
 
 var speechOutput;
 var reprompt;
-var welcomeOutput = "Let's practice your german! giggles";
+// var welcomeOutput = "Let's practice your german! giggles";
+var welcomeOutput = "Guten Tag! Heute sprechen wir Deutsch.";
 var welcomeReprompt = "sample re-prompt text";
 // 2. Skill Code =======================================================================================================
 "use strict";
@@ -46,7 +47,7 @@ var APP_ID = undefined;  // TODO replace with your app ID (OPTIONAL).
 var speechOutput = '';
 var handlers = {
     'LaunchRequest': function () {
-        welcomeOutput = toSpeech(welcomeOutput);
+        welcomeOutput = toGermanSpeech(welcomeOutput);
         this.emit(':ask', welcomeOutput, welcomeReprompt);
     },
     'AMAZON.HelpIntent': function () {
@@ -96,7 +97,7 @@ var handlers = {
         var self = this;
         understandApi.get('user/'+ user +'/repeat/')
             .then(function(res) {
-                speechOutput = res.data;
+                speechOutput = toGermanSpeech(res.data);
                 self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
 
@@ -107,7 +108,7 @@ var handlers = {
         var self = this;
         understandApi.get('user/'+ user +'/sentence/next/')
             .then(function(res) {
-                speechOutput = res.data;
+                speechOutput = toGermanSpeech(res.data);
                 self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
     },
@@ -122,7 +123,7 @@ var handlers = {
         var self = this;
         understandApi.get('user/'+ user +'/sentence/next/')
             .then(function(res) {
-                speechOutput = res.data;
+                speechOutput = toGermanSpeech(res.data);
                 self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
     },
@@ -166,7 +167,7 @@ var handlers = {
         var self = this;
         understandApi.post('user/'+ user +'/explain/resolve/yes/')
             .then(function(res) {
-                speechOutput = res.data;
+                speechOutput = toGermanSpeech(res.data);
                 self.emit(":ask", speechOutput, speechOutput);
 
                 if (res.data && res.data.length === []){
@@ -175,7 +176,7 @@ var handlers = {
 
                     understandApi.get('user/'+ user +'/sentence/repeat/')
                         .then(function(res) {
-                            speechOutput = res.data;
+                            speechOutput = toGermanSpeech(res.data);
                             self.emit(":ask", speechOutput, speechOutput);
                         }).catch(handleError.bind(self));
                 }
@@ -188,7 +189,7 @@ var handlers = {
         var self = this;
         understandApi.post('user/'+ user +'/explain/resolve/no/')
             .then(function(res) {
-                speechOutput = res.data;
+                speechOutput = toGermanSpeech(res.data);
                 self.emit(":ask", speechOutput, speechOutput);
 
                 if (res.data && res.data.length === []){
@@ -197,14 +198,14 @@ var handlers = {
 
                     understandApi.get('user/'+ user +'/sentence/repeat/')
                         .then(function(res) {
-                            speechOutput = res.data;
+                            speechOutput = toGermanSpeech(res.data);
                             self.emit(":ask", speechOutput, speechOutput);
                         }).catch(handleError.bind(self));
                 }
             }).catch(handleError.bind(self));
     },
     'Unhandled': function () {
-        speechOutput = "The skill didn't quite understand what you wanted.  Do you want to try something else?";
+        speechOutput = "The skill didn't quite understand what you wanted. Do you want to try something else?";
         this.emit(':ask', speechOutput, speechOutput);
     }
 };
