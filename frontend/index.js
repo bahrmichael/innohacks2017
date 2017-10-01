@@ -1,6 +1,8 @@
+var notAllowed = 'This option is not allowed.';
+
 var handleError = function(error) {
-    var speechOutput = 'no error case matched';
     var err = error.response.data;
+    var speechOutput = 'no error case matched';
     if (err.currentSection === 'init' && err.requiredSection === 'sentence') {
         speechOutput = 'You can start your workout by saying start';
     }
@@ -10,7 +12,7 @@ var handleError = function(error) {
     if (err.currentSection !== 'explain' && err.requiredSection === 'explain'){
         speechOutput = notAllowed + 'Valid options are: explain, repeat, next';
     }
-    self.emit(":ask", speechOutput, speechOutput);
+    this.emit(":ask", speechOutput, speechOutput);
     // return speechOutput;
 };
 var AWS = require("aws-sdk");
@@ -49,16 +51,12 @@ var toGermanSpeech = function(text, context) {
             return 'this is not a valid result'
             }
     });
-
-
 };
-
-var notAllowed = 'This option is not allowed.';
 
 var speechOutput;
 var reprompt;
-// var welcomeOutput = "Let's practice your german! giggles";
-var welcomeOutput = "Guten Tag! Heute sprechen wir Deutsch.";
+var welcomeOutput = "Let's practice your german! giggles";
+// var welcomeOutput = "Guten Tag! Heute sprechen wir Deutsch.";
 var welcomeReprompt = "sample re-prompt text";
 // 2. Skill Code =======================================================================================================
 "use strict";
@@ -74,7 +72,9 @@ var APP_ID = undefined;  // TODO replace with your app ID (OPTIONAL).
 var speechOutput = '';
 var handlers = {
     'LaunchRequest': function () {
-        toGermanSpeech(welcomeOutput, this);
+        // welcomeOutput = toGermanSpeech(welcomeOutput);
+        this.emit(':ask', welcomeOutput, welcomeReprompt);
+        // toGermanSpeech(welcomeOutput, this);
     },
     'AMAZON.HelpIntent': function () {
         speechOutput = '';
@@ -98,14 +98,11 @@ var handlers = {
         var speechOutput = "";
         //any intent slot variables are listed here for convenience
 
-        speechOutput = "This is the explain intent";
-        this.emit(":ask", speechOutput, speechOutput);
-
         var self = this;
         understandApi.get('user/{user}/explain/')
             .then(function(res) {
-                speechOutput = res.data;
-                self.emit(":ask", speechOutput, speechOutput);
+                speechOutput = toGermanSpeech(res.data, this);
+                // self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
     },
     "repeat": function () {
@@ -117,14 +114,11 @@ var handlers = {
         console.log(mainSlotSlot);
 
 
-        speechOutput = "This is the repeat intent";
-        this.emit(":ask", speechOutput, speechOutput);
-
         var self = this;
         understandApi.get('user/'+ user +'/repeat/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data);
-                self.emit(":ask", speechOutput, speechOutput);
+                speechOutput = toGermanSpeech(res.data, this);
+                // self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
 
     },
@@ -134,8 +128,8 @@ var handlers = {
         var self = this;
         understandApi.get('user/'+ user +'/sentence/next/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data);
-                self.emit(":ask", speechOutput, speechOutput);
+                speechOutput = toGermanSpeech(res.data, this);
+                // self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
     },
     "start": function () {
@@ -149,8 +143,9 @@ var handlers = {
         var self = this;
         understandApi.get('user/'+ user +'/sentence/next/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data);
-                self.emit(":ask", speechOutput, speechOutput);
+                speechOutput = toGermanSpeech(res.data, this);
+                console.log('speechOutput: ', speechOutput);
+                // self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
     },
     "understand": function () {
@@ -164,7 +159,8 @@ var handlers = {
         var self = this;
         understandApi.get('dummy/mit einer Bratpfanne./')
             .then(function(res) {
-                self.emit(":ask", res.data, res.data);
+                speechOutput = toGermanSpeech(res.data, this);
+                // self.emit(":ask", speechOutput, speechOutput);
                 return res.data;
             });
 
@@ -180,8 +176,8 @@ var handlers = {
         var self = this;
         understandApi.get('user/'+ user +'/sentence/translate/')
             .then(function(res) {
-                speechOutput = res.data;
-                self.emit(":ask", speechOutput, speechOutput);
+                speechOutput = toGermanSpeech(res.data, this);
+                // self.emit(":ask", speechOutput, speechOutput);
             }).catch(handleError.bind(self));
     },
     "yes": function () {
@@ -193,17 +189,17 @@ var handlers = {
         var self = this;
         understandApi.post('user/'+ user +'/explain/resolve/yes/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data);
+                speechOutput = toGermanSpeech(res.data, this);
                 self.emit(":ask", speechOutput, speechOutput);
 
                 if (res.data && res.data.length === []){
                     speechOutput = "No more new words";
-                    self.emit(":ask", speechOutput, speechOutput);
+                    // self.emit(":ask", speechOutput, speechOutput);
 
                     understandApi.get('user/'+ user +'/sentence/repeat/')
                         .then(function(res) {
-                            speechOutput = toGermanSpeech(res.data);
-                            self.emit(":ask", speechOutput, speechOutput);
+                            speechOutput = toGermanSpeech(res.data, this);
+                            // self.emit(":ask", speechOutput, speechOutput);
                         }).catch(handleError.bind(self));
                 }
             }).catch(handleError.bind(self));
@@ -215,8 +211,8 @@ var handlers = {
         var self = this;
         understandApi.post('user/'+ user +'/explain/resolve/no/')
             .then(function(res) {
-                speechOutput = toGermanSpeech(res.data);
-                self.emit(":ask", speechOutput, speechOutput);
+                speechOutput = toGermanSpeech(res.data, this);
+                // self.emit(":ask", speechOutput, speechOutput);
 
                 if (res.data && res.data.length === []){
                     speechOutput = "No more new words";
@@ -224,8 +220,8 @@ var handlers = {
 
                     understandApi.get('user/'+ user +'/sentence/repeat/')
                         .then(function(res) {
-                            speechOutput = toGermanSpeech(res.data);
-                            self.emit(":ask", speechOutput, speechOutput);
+                            speechOutput = toGermanSpeech(res.data, this);
+                            // self.emit(":ask", speechOutput, speechOutput);
                         }).catch(handleError.bind(self));
                 }
             }).catch(handleError.bind(self));

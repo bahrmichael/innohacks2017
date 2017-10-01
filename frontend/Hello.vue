@@ -9,6 +9,8 @@
   var handleError = function(error) {
     var speechOutput;
     var err = error.response.data;
+    console.log('this: ', this);
+    console.log('err: ', err);
     if (err.currentSection === 'init' && err.requiredSection === 'sentence') {
       speechOutput = 'You can start your workout by saying start';
     }
@@ -42,6 +44,11 @@
         timeout: 1000
       });
       var speechOutput = '';
+
+
+      /**/
+      var buffer = new Buffer([ 8, 6, 7, 5, 3, 0, 9]);
+      console.log('buffer.toString("utf-8"): ', buffer.toString("utf-8"));
 
       understandApi.get('user/' + this.user + '/state/')
         .then(function(res) {
