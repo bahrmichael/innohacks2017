@@ -13,17 +13,94 @@ var handleError = function(error) {
     self.emit(":ask", speechOutput, speechOutput);
     // return speechOutput;
 };
-
+const Fs = require("fs");
+var ffmpeg = require('ffmpeg');
 var AWS = require("aws-sdk");
-var toGermanSpeech = function(text) {
-    var presigner = new AWS.Polly.Presigner();
-    var url = presigner.getSynthesizeSpeechUrl({
+var toGermanSpeech = function(text, context) {
+    var self = context;
+    var polly = new AWS.Polly();
+    polly.synthesizeSpeech({
         TextType: 'text',
         OutputFormat: 'mp3',
-        VoiceId: 'Vickie',
+        VoiceId: 'Vicki',
+        SampleRate: '16000',
         Text: text
+    }, function(err, data) {
+        if (err) console.log(err, err.stack); // an error occurred
+        else {
+            var speech = data;
+            console.log(speech);
+
+            if (data.AudioStream instanceof Buffer) {
+                // Fs.writeFile("/tmp/speech.mp3", data.AudioStream, function(err) {
+                // if (err) {
+                //     return console.log(err)
+                // }
+                // console.log("The file was saved!");
+                //
+                // try {
+                //     var process = new ffmpeg('/tmp/speech.mp3');
+                //     process.then(function (video) {
+                //         // Callback mode
+                //         video.setAudioBitRate(16);
+                //         video.setAudioFrequency(48);
+                //         video.fnExtractSoundToMP3('/tmp/audio.mp3', function (error, file) {
+                //             if (!error)
+                //                 console.log('Audio file: ' + file);
+                //
+                //             var data = Fs.readFileSync('/tmp/audio.mp3');
+                            var params = {
+                                Body: data.AudioStream,
+                                Bucket: "innohacks2017",
+                                Key: "audio.mp3",
+                                ACL: "public-read"
+                            };
+                            var s3 = new AWS.S3();
+                            s3.putObject(params, function(err, data) {
+                                if (err) console.log(err, err.stack); // an error occurred
+                                else     {
+                                    console.log(data);
+                                    var url = 'https://s3-eu-west-1.amazonaws.com/innohacks2017/audio.mp3';
+                                    var ssml = '<audio src="' + url + '" />';
+                                    self.emit(':ask', ssml, 'reprompt');
+                                }           // successful response
+                                /*
+                                data = {
+                                 ETag: "\"6805f2cfc46c0f04559748bb039d69ae\"",
+                                 VersionId: "Bvq0EDKxOcXLJXNo_Lkz37eM3R4pfzyQ"
+                                }
+                                */
+                            });
+                        }
+
+                //         );
+                //     }, function (err) {
+                //         console.log('Error: ' + err);
+                //     });
+                // } catch (e) {
+                //     console.log(e.code);
+                //     console.log(e.msg);
+                // }
+
+
+
+            // var url = "https://s3-eu-west-1.amazonaws.com/innohacks2017/file.mp3";
+            return 'this is not a valid result'
+            // return "<say-as interpret-as=\"spell-out\">hello</say-as>";
+                }
+                // )
+            // }
+        // }           // successful response
+        /*
+        data = {
+         AudioStream: <Binary String>,
+         ContentType: "audio/mpeg",
+         RequestCharacters: 37
+        }
+        */
     });
-    return '<audio src="' + url + '" />'
+
+
 };
 
 var notAllowed = 'This option is not allowed.';
@@ -47,8 +124,7 @@ var APP_ID = undefined;  // TODO replace with your app ID (OPTIONAL).
 var speechOutput = '';
 var handlers = {
     'LaunchRequest': function () {
-        welcomeOutput = toGermanSpeech(welcomeOutput);
-        this.emit(':ask', welcomeOutput, welcomeReprompt);
+        toGermanSpeech(welcomeOutput, this);
     },
     'AMAZON.HelpIntent': function () {
         speechOutput = '';
@@ -386,7 +462,7 @@ function buildSpeechletResponse(options) {
 }
 
 function getDialogDirectives(dialogType, updatedIntent, slotName) {
-    let directive = {
+    var directive = {
         type: dialogType
     };
 
