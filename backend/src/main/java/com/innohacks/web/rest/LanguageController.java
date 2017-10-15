@@ -74,11 +74,11 @@ public class LanguageController {
     @GetMapping("/user/{user}/sentence/translate/")
     public ResponseEntity getTranslationForRecentSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
-        if (hasNoState(user)) {
-            return ResponseEntity.status(412).body(new SectionError(INIT, userSection.get(user)));
-        } else if (!isSentenceSection(user)) {
-            return ResponseEntity.status(412).body(new SectionError(SENTENCE, userSection.get(user)));
-        }
+//        if (hasNoState(user)) {
+//            return ResponseEntity.status(412).body(new SectionError(INIT, userSection.get(user)));
+//        } else if (!isSentenceSection(user)) {
+//            return ResponseEntity.status(412).body(new SectionError(SENTENCE, userSection.get(user)));
+//        }
         return ResponseEntity.ok(recentSentenceOfUser.get(user).getEnglish());
     }
 
@@ -89,11 +89,11 @@ public class LanguageController {
     @GetMapping("/user/{user}/explain/")
     public ResponseEntity getUnknownWordsForLastSentence(@PathVariable("user") String user) {
         lastUserInteraction.put(user, LocalDateTime.now());
-        if (hasNoState(user)) {
-            return ResponseEntity.status(412).body(new SectionError(INIT, userSection.get(user)));
-        } else if (!isSentenceSection(user)) {
-            return ResponseEntity.status(412).body(new SectionError(SENTENCE, userSection.get(user)));
-        }
+//        if (hasNoState(user)) {
+//            return ResponseEntity.status(412).body(new SectionError(INIT, userSection.get(user)));
+//        } else if (!isSentenceSection(user)) {
+//            return ResponseEntity.status(412).body(new SectionError(SENTENCE, userSection.get(user)));
+//        }
 
         userSection.put(user, EXPLAIN);
 
@@ -105,11 +105,11 @@ public class LanguageController {
     @PostMapping("/user/{user}/explain/resolve/{yesOrNo}/")
     public ResponseEntity resolveWord(@PathVariable("user") String user, @PathVariable("yesOrNo") String state) {
         lastUserInteraction.put(user, LocalDateTime.now());
-        if (hasNoState(user)) {
-            return ResponseEntity.status(412).body(new SectionError(INIT, userSection.get(user)));
-        } else if (!isExplainState(user)) {
-            return ResponseEntity.status(412).body(new SectionError(EXPLAIN, userSection.get(user)));
-        }
+//        if (hasNoState(user)) {
+//            return ResponseEntity.status(412).body(new SectionError(INIT, userSection.get(user)));
+//        } else if (!isExplainState(user)) {
+//            return ResponseEntity.status(412).body(new SectionError(EXPLAIN, userSection.get(user)));
+//        }
 
         List<String> words = recentUnknownWords.get(user);
         String currentWord = words.get(0);
