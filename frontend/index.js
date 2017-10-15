@@ -44,7 +44,7 @@ var toGermanSpeech = function(text, context) {
                                     console.log(data);
                                     var url = 'https://s3-eu-west-1.amazonaws.com/innohacks2017/audio.mp3';
                                     var ssml = '<audio src="' + url + '" />';
-                                    self.emit(':ask', ssml, 'reprompt');
+                                    context.emit(':ask', ssml, 'reprompt');
                                 }           // successful response
                             });
                         }
