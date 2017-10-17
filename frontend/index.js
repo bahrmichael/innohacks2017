@@ -30,25 +30,25 @@ var toGermanSpeech = function(text, context) {
             console.log(speech);
 
             if (data.AudioStream instanceof Buffer) {
-                            var params = {
-                                Body: data.AudioStream,
-                                Bucket: "innohacks2017",
-                                Key: "audio.mp3",
-                                ACL: "public-read"
-                            };
-                            var s3 = new AWS.S3();
-                            s3.putObject(params, function(err, data) {
-                                if (err) console.log(err, err.stack); // an error occurred
-                                else     {
-                                    console.log(data);
-                                    var url = 'https://s3-eu-west-1.amazonaws.com/innohacks2017/audio.mp3';
-                                    var ssml = '<audio src="' + url + '" />';
-                                    context.emit(':ask', ssml, 'reprompt');
-                                }           // successful response
-                            });
-                        }
-            return 'this is not a valid result'
+                var params = {
+                    Body: data.AudioStream,
+                    Bucket: "innohacks2017",
+                    Key: "audio.mp3",
+                    ACL: "public-read"
+                };
+                var s3 = new AWS.S3();
+                s3.putObject(params, function(err, data) {
+                    if (err) console.log(err, err.stack); // an error occurred
+                    else     {
+                        console.log(data);
+                        var url = 'https://s3-eu-west-1.amazonaws.com/innohacks2017/audio.mp3';
+                        var ssml = '<audio src="' + url + '" />';
+                        context.emit(':ask', ssml, 'reprompt');
+                    }           // successful response
+                });
             }
+            return 'this is not a valid result'
+        }
     });
 };
 

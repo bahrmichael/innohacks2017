@@ -1,6 +1,9 @@
 # Step by Step Tutorial zum Erstellen und bearbeiten von Alexa skills:
   Vorraussetzungen: Du hast einen Amazon Account.
 
+Oder lernt mit CodeAcademy kostenfrei:
+https://www.codecademy.com/learn/learn-alexa?utm_source=customerio&utm_medium=Fortnightly-2017-09-27&utm_campaign=newsletter_a&utm_content=learn_alexa
+
 ## Step 1:
 Logge dich in den Developer account ein unter: https://developer.amazon.com/ (Du kannst deinen normalen Amazon account verwenden)
 <h3 align="center">
@@ -175,20 +178,21 @@ Klicke Save und Test klicken. Oben rechts.
 
 ## Step 23:
 Bevor wir in dem aufgepoppten Test-Modal was eingeben, müssen wir noch den Skill zuende konfigurieren: Gehe dazu wieder zu dem Developer-account und klicke auf Configuration in deinem Skill. Siehe Bild 23.
-wähle Lambda ARN und füge den kopierten ARN Code ein. Klicke dann auf "Next" am Seitenende.
+wähle Lambda ARN und füge den kopierten ARN Code ein. Klicke dann auf <b>Next</b> am Seitenende.
 <h3 align="center">
     <img src="https://raw.githubusercontent.com/bahrmichael/innohacks2017/master/images/step23.PNG?sanitize=true">
 </h3>
 
 ## Step 24:
 Sobald der Skill konfiguriert ist, kann muss man ihn testen. Gibt eine sample utterance unter dem Textfeld and und klicke auf "Ask myNewSkill". 
-Es wird eine Anfrage and die verknüpfte Lambda-Funktion gemacht. Diesen Service Request im linken Fenster unter "Ask myNewSkill" kopierst du komplett und fügst ihn in das aufgepoppte Test-Modal in der AWS Lambda-Funktion ein.
+Es wird eine Anfrage and die verknüpfte Lambda-Funktion gemacht. Diesen Service Request im linken Fenster unter <b>Ask myNewSkill</b> kopierst du komplett und fügst ihn in das aufgepoppte Test-Modal in der AWS Lambda-Funktion ein.
 <h3 align="center">
     <img src="https://raw.githubusercontent.com/bahrmichael/innohacks2017/master/images/step24.PNG?sanitize=true">
 </h3>
 
 ## Step 25:
-Hier kommt der Test Service-Request rein, mit dem dein Skill getestet wird. Speichern und laufen lassen. Wenn der alert grün ist, hat alles geklappt und du kannst den Skill jetzt auf dem Echo testen.
+Hier kommt der Test Service-Request rein, mit dem dein Skill getestet wird. Speichern und laufen lassen. 
+Wenn der alert grün ist, hat alles geklappt und du kannst den Skill jetzt auf dem Echo testen.
 <h3 align="center">
     <img src="https://raw.githubusercontent.com/bahrmichael/innohacks2017/master/images/step25.PNG?sanitize=true">
 </h3>
