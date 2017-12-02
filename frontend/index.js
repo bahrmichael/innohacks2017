@@ -1,3 +1,8 @@
+/* This code has been generated from your interaction model
+
+/* eslint-disable  func-names */
+/* eslint quote-props: ["error", "consistent"]*/
+
 var notAllowed = 'This option is not allowed.';
 
 var handleError = function(error) {
@@ -6,77 +11,58 @@ var handleError = function(error) {
     if (err.currentSection === 'init' && err.requiredSection === 'sentence') {
         speechOutput = 'You can start your workout by saying start';
     }
-    if (err.currentSection === 'explain' && err.requiredSection === 'sentence') {
-        speechOutput = 'Is this a new word? Please choose yes or no.';
-    }
     if (err.currentSection !== 'explain' && err.requiredSection === 'explain'){
         speechOutput = notAllowed + 'Valid options are: explain, repeat, next';
     }
     this.emit(":ask", speechOutput, speechOutput);
-    // return speechOutput;
 };
-var AWS = require("aws-sdk");
-var toGermanSpeech = function(text, context) {
-    var polly = new AWS.Polly();
-    polly.synthesizeSpeech({
-        TextType: 'text',
-        OutputFormat: 'mp3',
-        VoiceId: 'Vicki',
-        Text: text
-    }, function(err, data) {
-        if (err) console.log(err, err.stack); // an error occurred
-        else {
-            var speech = data;
-            console.log(speech);
+function random(min, max) {
+    return Math.floor(Math.random() * (max - min) + min);
+}
 
-            if (data.AudioStream instanceof Buffer) {
-                var params = {
-                    Body: data.AudioStream,
-                    Bucket: "innohacks2017",
-                    Key: "audio.mp3",
-                    ACL: "public-read"
-                };
-                var s3 = new AWS.S3();
-                s3.putObject(params, function(err, data) {
-                    if (err) console.log(err, err.stack); // an error occurred
-                    else     {
-                        console.log(data);
-                        var url = 'https://s3-eu-west-1.amazonaws.com/innohacks2017/audio.mp3';
-                        var ssml = '<audio src="' + url + '" />';
-                        context.emit(':ask', ssml, 'reprompt');
-                    }           // successful response
-                });
-            }
-            return 'this is not a valid result'
-        }
-    });
-};
+
+var userId = '';
+var selectedLanguage = '';
+var utterance = '';
+var AWS = require("aws-sdk");
+var T = require("./translator");
+var axios = require("axios");
+var api = axios.create({
+    baseURL: 'http://ec2-34-249-81-249.eu-west-1.compute.amazonaws.com:8080/api/',
+    timeout: 3000,
+    headers: {
+        'X-ALEXA-ID': userId,
+        'X-ALEXA-LANGUAGE': selectedLanguage,
+        'X-UTTERANCE': utterance
+    }
+});
+
+var continueSentence = " . I will continue";
+var startSpeechOutput = 'You can start the session by saying start or ok. ';
+var helpSpeechOutput =
+    'You can get a translation of the last sentence by saying translate. ' +
+    'You can make me repeat the last sentence by saying repeat or again. ' +
+    'Other then that you can proceed with the next sentence by saying ok or yes, if you understood' +
+    ' the sentence. Say no if you did not understand the sentence.'
+var understandQuestion = '... , Did you understand this sentence?';
+
+
 
 var speechOutput;
 var reprompt;
-var welcomeOutput = "Let's practice your german! giggles";
-// var welcomeOutput = "Guten Tag! Heute sprechen wir Deutsch.";
-var welcomeReprompt = "sample re-prompt text";
-// 2. Skill Code =======================================================================================================
+var welcomeOutput = startSpeechOutput;
+var welcomeReprompt = startSpeechOutput;
+ // 2. Skill Code =======================================================================================================
 "use strict";
 var Alexa = require('alexa-sdk');
-var axios = require('axios');
-var understandApi = axios.create({
-    baseURL: 'http://46.101.227.37:10000/openapi/',
-    timeout: 1000
-});
-var user = 'Subject';
-
 var APP_ID = undefined;  // TODO replace with your app ID (OPTIONAL).
 var speechOutput = '';
 var handlers = {
     'LaunchRequest': function () {
-        // toGermanSpeech("Guten Tag! Heute lernen wir Deutsch.", this);
-        this.emit(':ask', welcomeOutput, welcomeReprompt);
-        // toGermanSpeech(welcomeOutput, this);
+          this.emit(':ask', welcomeOutput, welcomeReprompt);
     },
-    'AMAZON.HelpIntent': function () {
-        speechOutput = '';
+	'AMAZON.HelpIntent': function () {
+        speechOutput = helpSpeechOutput;
         reprompt = '';
         this.emit(':ask', speechOutput, reprompt);
     },
@@ -85,159 +71,164 @@ var handlers = {
         this.emit(':tell', speechOutput);
     },
     'AMAZON.StopIntent': function () {
-        speechOutput = '';
+        speechOutput = 'Really? bye bye kiddo!';
         this.emit(':tell', speechOutput);
     },
     'SessionEndedRequest': function () {
-        speechOutput = '';
-        //this.emit(':saveState', true);//uncomment to save attributes to db on session end
+        speechOutput = 'The session ended.';
+        //this.emit(':saveState',�true);//uncomment to save attributes to db on session end
         this.emit(':tell', speechOutput);
     },
-    "explain": function () {
-        var speechOutput = "";
-        //any intent slot variables are listed here for convenience
-
+	"works": function () {
         var self = this;
-        understandApi.get('user/{user}/explain/')
+		var speechOutput = "";
+        utterance = 'I want to work';
+
+        api.get('next')
             .then(function(res) {
-                toGermanSpeech(res.data, self);
-                // self.emit(":ask", speechOutput, speechOutput);
-            }).catch(handleError.bind(self));
-    },
-    "repeat": function () {
-        var speechOutput = "";
-        //any intent slot variables are listed here for convenience
-        var repeatSlotSlotRaw  = this.event.request.intent.slots.repeatSlot.value;
-        console.log(repeatSlotSlotRaw);
-        var mainSlotSlot = resolveCanonical(this.event.request.intent.slots.repeatSlot);
-        console.log(mainSlotSlot);
-
-
-        var self = this;
-        understandApi.get('user/'+ user +'/repeat/')
-            .then(function(res) {
-                toGermanSpeech(res.data, self);
-                // self.emit(":ask", speechOutput, speechOutput);
-            }).catch(handleError.bind(self));
-
-    },
-    "next": function () {
-        var speechOutput = "";
-
-        var self = this;
-        understandApi.get('user/'+ user +'/sentence/next/')
-            .then(function(res) {
-                toGermanSpeech(res.data, self);
-                // self.emit(":ask", speechOutput, speechOutput);
-            }).catch(handleError.bind(self));
-    },
-    "start": function () {
-        //any intent slot variables are listed here for convenience
-        var mainSlotRaw = this.event.request.intent.slots.main.value;
-        console.log(mainSlotRaw);
-        var mainSlot = resolveCanonical(this.event.request.intent.slots.main);
-        console.log(mainSlot);
-
-        var self = this;
-        understandApi.get('user/'+ user +'/sentence/next/')
-            .then(function(res) {
-                // console.log('speechOutput: ', speechOutput);
-                toGermanSpeech(res.data, self);
-                // self.emit(":ask", speechOutput, speechOutput);
-            }).catch(handleError.bind(self));
-    },
-    "understand": function () {
-        var speechOutput = "";
-        //any intent slot variables are listed here for convenience
-        var mainSlotRaw = this.event.request.intent.slots.main.value;
-        console.log(mainSlotRaw);
-        var mainSlot = resolveCanonical(this.event.request.intent.slots.main);
-        console.log(mainSlot);
-
-        var self = this;
-        understandApi.get('dummy/mit einer Bratpfanne./')
-            .then(function(res) {
-                speechOutput = toGermanSpeech(res.data, self);
-                // self.emit(":ask", speechOutput, speechOutput);
-                return res.data;
+                speechOutput = "Fantastic, let's go! $$" + understandQuestion;
+                T.toLocaleSpeech(
+                    res,
+                    'de_de',
+                    speechOutput,
+                    userId,
+                    self
+                );
+            }).catch(function(res) {
+                speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
+                self.emit(":ask", speechOutput, speechOutput);
             });
+    },
+	"yes": function () {
+        var self = this;
+		var speechOutput = "";
+        var yesSLOTRaw  = this.event.request.intent.slots.yesSLOT.value;
+        utterance = yesSLOTRaw;
+		var gratulation = ['wonderful', 'nice', 'fantastic', 'awesome', 'well', 'cool', 'perfect'];
+    	//any intent slot variables are listed here for convenience
 
+        //normal case: continueSentence == '.I will continue'
+        if (random(0, 10) <= 3) {
+            continueSentence = "let\'s continue";
+            understandQuestion = '';
+        }
+    	//Your custom intent handling goes here
+
+        api.get('sentence/ok')
+            .then(function(res) {
+                speechOutput = gratulation[(random(0,7))] + ", " + continueSentence + ". $$" + understandQuestion;
+                T.toLocaleSpeech(
+                    res,
+                    'de_de',
+                    speechOutput,
+                    userId,
+                    self
+                );
+            }).catch(function(res) {
+                speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
+                self.emit(":ask", speechOutput, speechOutput);
+            });
+    },
+	"no": function () {
+        var self = this;
+		var speechOutput = "";
+        var noSLOTRaw  = this.event.request.intent.slots.noSLOT.value;
+        utterance = noSLOTRaw;
+		var sadlyOutput = "let's continue anyways. ";
+    	//any intent slot variables are listed here for convenience
+
+        //normal case: continueSentence == '.I will continue'
+        if (random(0, 10) === 5) {
+            continueSentence = helpSpeechOutput;
+            // understandQuestion = '';
+        }else if(random(0, 10) > 6){
+            continueSentence = '';
+            sadlyOutput = '';
+        }
+
+    	//Your custom intent handling goes here
+    	api.get('sentence/notok')
+            .then(function(res) {
+                speechOutput = "I noticed that, " + sadlyOutput + ". hmm, ... $$" + understandQuestion;
+                T.toLocaleSpeech(
+                    res,
+                    'de_de',
+                    speechOutput,
+                    userId,
+                    self
+                );
+            }).catch(function(res) {
+                speechOutput = "I'm having a headache. " + understandQuestion;
+                self.emit(":ask", speechOutput, speechOutput);
+            });
     },
     "translate": function () {
-        var speechOutput = "";
-        //any intent slot variables are listed here for convenience
-        var transSlotRaw = this.event.request.intent.slots.trans.value;
-        console.log(transSlotRaw);
-        var transSlot = resolveCanonical(this.event.request.intent.slots.trans);
-        console.log(transSlot);
-
         var self = this;
-        understandApi.get('user/'+ user +'/sentence/translate/')
-            .then(function(res) {
-                toGermanSpeech(res.data, self);
-                // self.emit(":ask", speechOutput, speechOutput);
-            }).catch(handleError.bind(self));
-    },
-    "yes": function () {
         var speechOutput = "";
-        //any intent slot variables are listed here for convenience
+        var translateSLOTRaw  = this.event.request.intent.slots.translateSLOT.value;
+        utterance = translateSLOTRaw;
+        var wrapperSentence = "The translation is $." + understandQuestion;
 
-        // speechOutput = "This is a place holder response for the intent named yes.";
-        // this.emit(":ask", speechOutput, speechOutput);
+
+        api.get('sentence/translate')
+            .then(function(res) {
+                if (random(0,10) < 7){ understandQuestion = ''; }
+                speechOutput = "The translation is: " + res + understandQuestion;
+                self.emit(":ask", speechOutput, speechOutput);
+            }).catch(function(res) {
+                T.toLocaleSpeech(
+                    /*res*/"Gefangen. Ich bin ein deutschsprechender Hans.",
+                    'de_de',
+                    "$$",
+                    userId,
+                    self
+                );
+                speechOutput = "I'm having a headache and therefore can't think properly. " + understandQuestion;
+                self.emit(":ask", speechOutput, speechOutput);
+            });
+    },
+    "repeat": function () {
         var self = this;
-        understandApi.post('user/'+ user +'/explain/resolve/yes/')
-            .then(function(res) {
-
-                if (res.data && res.data.length === []){
-                    // speechOutput = "No more new words";
-                    // self.emit(":ask", speechOutput, speechOutput);
-
-                    understandApi.get('user/'+ user +'/sentence/repeat/')
-                        .then(function(res) {
-                            toGermanSpeech(res.data, self);
-                            // self.emit(":ask", speechOutput, speechOutput);
-                        }).catch(handleError.bind(self));
-                } else {
-                    toGermanSpeech(res.data, self);
-                }
-            }).catch(handleError.bind(self));
-    },
-    "no": function () {
         var speechOutput = "";
+        var repeatSLOTRaw  = this.event.request.intent.slots.repeatSLOT.value;
+        utterance = repeatSLOTRaw;
         //any intent slot variables are listed here for convenience
 
-        var self = this;
-        understandApi.post('user/'+ user +'/explain/resolve/no/')
+        //Your custom intent handling goes here
+
+        api.get('sentence/repeat')
             .then(function(res) {
-                // self.emit(":ask", speechOutput, speechOutput);
-
-                if (res.data && res.data.length === []){
-                    // speechOutput = "No more new words";
-                    // self.emit(":ask", speechOutput, speechOutput);
-
-                    understandApi.get('user/'+ user +'/sentence/repeat/')
-                        .then(function(res) {
-                            toGermanSpeech(res.data, self);
-                            // self.emit(":ask", speechOutput, speechOutput);
-                        }).catch(handleError.bind(self));
-                } else {
-                    toGermanSpeech(res.data, self);
-                }
-            }).catch(handleError.bind(self));
+                speechOutput = "repeat intent then. you said "+ repeatSLOTRaw + understandQuestion;
+                self.emit(":ask", speechOutput, speechOutput);
+                T.toLocaleSpeech(
+                    res,
+                    'de_de',
+                    "$$",
+                    userId,
+                    self
+                );
+            }).catch(function(res) {
+                speechOutput = "I'm sorry, I can't repeat the sentence." + understandQuestion;
+                self.emit(":ask", speechOutput, speechOutput);
+            });
     },
-    'Unhandled': function () {
+	'Unhandled': function () {
         speechOutput = "The skill didn't quite understand what you wanted. Do you want to try something else?";
         this.emit(':ask', speechOutput, speechOutput);
     }
 };
 
+
+// userId = context.System.user.userId;
 exports.handler = (event, context) => {
     var alexa = Alexa.handler(event, context);
     alexa.APP_ID = APP_ID;
+    userId = event.session.user.userId;
+    selectedLanguage = event.request.locale;
     // To enable string internationalization (i18n) features, set a resources object.
     //alexa.resources = languageStrings;
     alexa.registerHandlers(handlers);
-    //alexa.dynamoDBTableName = 'DYNAMODB_TABLE_NAME'; //uncomment this line to save attributes to DB
+    //alexa.dynamoDBTableName�=�'DYNAMODB_TABLE_NAME';�//uncomment this line to save attributes to DB
     alexa.execute();
 };
 
@@ -245,61 +236,61 @@ exports.handler = (event, context) => {
 // 3. Helper Function  =================================================================================================
 
 function resolveCanonical(slot){
-    //this function looks at the entity resolution part of request and returns the slot value if a synonyms is provided
+	//this function looks at the entity resolution part of request and returns the slot value if a synonyms is provided
     try{
-        var canonical = slot.resolutions.resolutionsPerAuthority[0].values[0].value.name;
-    }catch(err){
-        console.log(err.message);
-        var canonical = slot.value;
-    };
-    return canonical;
+		var canonical = slot.resolutions.resolutionsPerAuthority[0].values[0].value.name;
+	}catch(err){
+	    console.log(err.message);
+	    var canonical = slot.value;
+	};
+	return canonical;
 };
 
 function delegateSlotCollection(){
-    console.log("in delegateSlotCollection");
-    console.log("current dialogState: "+this.event.request.dialogState);
+  console.log("in delegateSlotCollection");
+  console.log("current dialogState: "+this.event.request.dialogState);
     if (this.event.request.dialogState === "STARTED") {
-        console.log("in Beginning");
-        var updatedIntent= null;
-        // updatedIntent=this.event.request.intent;
-        //optionally pre-fill slots: update the intent object with slot values for which
-        //you have defaults, then return Dialog.Delegate with this updated intent
-        // in the updatedIntent property
-        //this.emit(":delegate", updatedIntent); //uncomment this is using ASK SDK 1.0.9 or newer
-
-        //this code is necessary if using ASK SDK versions prior to 1.0.9
-        if(this.isOverridden()) {
-            return;
-        }
-        this.handler.response = buildSpeechletResponse({
-            sessionAttributes: this.attributes,
-            directives: getDialogDirectives('Dialog.Delegate', updatedIntent, null),
-            shouldEndSession: false
-        });
-        this.emit(':responseReady', updatedIntent);
-
+      console.log("in Beginning");
+	  var updatedIntent= null;
+	  // updatedIntent=this.event.request.intent;
+      //optionally pre-fill slots: update the intent object with slot values for which
+      //you have defaults, then return Dialog.Delegate with this updated intent
+      // in the updatedIntent property
+      //this.emit(":delegate", updatedIntent); //uncomment this is using ASK SDK 1.0.9 or newer
+	  
+	  //this code is necessary if using ASK SDK versions prior to 1.0.9 
+	  if(this.isOverridden()) {
+			return;
+		}
+		this.handler.response = buildSpeechletResponse({
+			sessionAttributes: this.attributes,
+			directives: getDialogDirectives('Dialog.Delegate', updatedIntent, null),
+			shouldEndSession: false
+		});
+		this.emit(':responseReady', updatedIntent);
+		
     } else if (this.event.request.dialogState !== "COMPLETED") {
-        console.log("in not completed");
-        // return a Dialog.Delegate directive with no updatedIntent property.
-        //this.emit(":delegate"); //uncomment this is using ASK SDK 1.0.9 or newer
-
-        //this code necessary is using ASK SDK versions prior to 1.0.9
-        if(this.isOverridden()) {
-            return;
-        }
-        this.handler.response = buildSpeechletResponse({
-            sessionAttributes: this.attributes,
-            directives: getDialogDirectives('Dialog.Delegate', updatedIntent, null),
-            shouldEndSession: false
-        });
-        this.emit(':responseReady');
-
+      console.log("in not completed");
+      // return a Dialog.Delegate directive with no updatedIntent property.
+      //this.emit(":delegate"); //uncomment this is using ASK SDK 1.0.9 or newer
+	  
+	  //this code necessary is using ASK SDK versions prior to 1.0.9
+		if(this.isOverridden()) {
+			return;
+		}
+		this.handler.response = buildSpeechletResponse({
+			sessionAttributes: this.attributes,
+			directives: getDialogDirectives('Dialog.Delegate', updatedIntent, null),
+			shouldEndSession: false
+		});
+		this.emit(':responseReady');
+		
     } else {
-        console.log("in completed");
-        console.log("returning: "+ JSON.stringify(this.event.request.intent));
-        // Dialog is now complete and all required slots should be filled,
-        // so call your normal intent handler.
-        return this.event.request.intent;
+      console.log("in completed");
+      console.log("returning: "+ JSON.stringify(this.event.request.intent));
+      // Dialog is now complete and all required slots should be filled,
+      // so call your normal intent handler.
+      return this.event.request.intent;
     }
 }
 
@@ -407,7 +398,7 @@ function buildSpeechletResponse(options) {
 }
 
 function getDialogDirectives(dialogType, updatedIntent, slotName) {
-    var directive = {
+    let directive = {
         type: dialogType
     };
 
