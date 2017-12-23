@@ -25,7 +25,7 @@
 
   import axios from 'axios'
   var understandApi = axios.create({
-    baseURL: 'http://46.101.227.37:10000/openapi/',
+    baseURL: 'http://ec2-34-249-81-249.eu-west-1.compute.amazonaws.com:8080/init//',
     timeout: 1000
   });
 
@@ -40,7 +40,7 @@
     mounted: function() {
       var self = this;
       var understandApi = axios.create({
-        baseURL: 'http://46.101.227.37:10000/openapi/',
+        baseURL: 'http://ec2-34-249-81-249.eu-west-1.compute.amazonaws.com:8080/init//',
         timeout: 1000
       });
       var speechOutput = '';
