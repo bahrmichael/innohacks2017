@@ -2,7 +2,15 @@
 
 /* eslint-disable  func-names */
 /* eslint quote-props: ["error", "consistent"]*/
+/*
 
+ /init -> 201 || 204 -> languages
+
+ Languages intent mit Language names
+ /language -> result enthält verfügbare language-Names, falls selectedTargetLanguage in language names, set language over /learner/{languageName}
+ /onboarding-completed -> solange 204, get /onboarding-completed, else get /sentence
+
+ */
 var notAllowed = 'This option is not allowed.';
 
 var handleError = function(error) {
@@ -38,7 +46,7 @@ var api = axios.create({
 });
 
 var continueSentence = " . I will continue";
-var startSpeechOutput = 'You can start the session by saying start or ok. ';
+var startSpeechOutput = 'You can start the session by saying start or ok.';
 var helpSpeechOutput =
     'You can get a translation of the last sentence by saying translate. ' +
     'You can make me repeat the last sentence by saying repeat or again. ' +
@@ -59,7 +67,29 @@ var APP_ID = undefined;  // TODO replace with your app ID (OPTIONAL).
 var speechOutput = '';
 var handlers = {
     'LaunchRequest': function () {
-          this.emit(':ask', welcomeOutput, welcomeReprompt);
+        var self = this;
+        api.post('init/')
+            .then(function(res) {
+                // speechOutput = "Fantastic, let's go! $$" + understandQuestion;
+                console.log('res.status: ', res,  res.status);
+                if (res.status === 204 || res.status === 201){ //exists or created
+                    api.get('languages/')
+                        .then(function(res) {
+                            console.log('res.status: ', res,  res.status);
+                            speechOutput = "Which language do you want to learn: You can chose between: " + res.language;
+                        }).catch(function(res) {
+
+                        // if (res.status === 204 || res.status === 201){ //exists or created
+                        //
+                        // }
+                    });
+                }
+            }).catch(function(err) {
+                console.log('err: ', err);
+                // speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
+                // self.emit(":ask", speechOutput, speechOutput);
+            });
+        // this.emit(':ask', welcomeOutput, welcomeReprompt);
     },
 	'AMAZON.HelpIntent': function () {
         speechOutput = helpSpeechOutput;
@@ -84,7 +114,7 @@ var handlers = {
 		var speechOutput = "";
         utterance = 'I want to work';
 
-        api.get('next')
+        api.get('sentence')
             .then(function(res) {
                 speechOutput = "Fantastic, let's go! $$" + understandQuestion;
                 T.toLocaleSpeech(
@@ -114,7 +144,7 @@ var handlers = {
         }
     	//Your custom intent handling goes here
 
-        api.get('sentence/ok')
+        api.post('sentence/ok')
             .then(function(res) {
                 speechOutput = gratulation[(random(0,7))] + ", " + continueSentence + ". $$" + understandQuestion;
                 T.toLocaleSpeech(
@@ -147,7 +177,7 @@ var handlers = {
         }
 
     	//Your custom intent handling goes here
-    	api.get('sentence/notok')
+    	api.post('sentence/notok')
             .then(function(res) {
                 speechOutput = "I noticed that, " + sadlyOutput + ". hmm, ... $$" + understandQuestion;
                 T.toLocaleSpeech(
