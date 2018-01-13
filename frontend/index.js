@@ -28,22 +28,28 @@ function random(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
 }
 
+var deviceLocale = ''
 
 var userId = '';
 var selectedLanguage = '';
 var utterance = '';
+
 var AWS = require("aws-sdk");
 var T = require("./translator");
 var axios = require("axios");
-var api = axios.create({
-    baseURL: 'http://ec2-34-249-81-249.eu-west-1.compute.amazonaws.com:8080/api/',
-    timeout: 3000,
-    headers: {
-        'X-ALEXA-ID': userId,
-        'X-ALEXA-LANGUAGE': selectedLanguage,
-        'X-UTTERANCE': utterance
-    }
-});
+
+var getApi = function() {
+    var api = axios.create({
+        baseURL: 'http://52.213.36.32:8080/',
+        timeout: 3000,
+        headers: {
+            'X-ALEXA-ID': userId,
+            'X-ALEXA-LANGUAGE': selectedLanguage,
+            'X-UTTERANCE': utterance
+        }
+    })
+    return api;
+}
 
 var continueSentence = " . I will continue";
 var startSpeechOutput = 'You can start the session by saying start or ok.';
@@ -66,32 +72,7 @@ var Alexa = require('alexa-sdk');
 var APP_ID = undefined;  // TODO replace with your app ID (OPTIONAL).
 var speechOutput = '';
 var handlers = {
-    'LaunchRequest': function () {
-        var self = this;
-        api.post('init/')
-            .then(function(res) {
-                // speechOutput = "Fantastic, let's go! $$" + understandQuestion;
-                console.log('res.status: ', res,  res.status);
-                if (res.status === 204 || res.status === 201){ //exists or created
-                    api.get('languages/')
-                        .then(function(res) {
-                            console.log('res.status: ', res,  res.status);
-                            speechOutput = "Which language do you want to learn: You can chose between: " + res.language;
-                        }).catch(function(res) {
-
-                        // if (res.status === 204 || res.status === 201){ //exists or created
-                        //
-                        // }
-                    });
-                }
-            }).catch(function(err) {
-                console.log('err: ', err);
-                // speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
-                // self.emit(":ask", speechOutput, speechOutput);
-            });
-        // this.emit(':ask', welcomeOutput, welcomeReprompt);
-    },
-	'AMAZON.HelpIntent': function () {
+    'AMAZON.HelpIntent': function () {
         speechOutput = helpSpeechOutput;
         reprompt = '';
         this.emit(':ask', speechOutput, reprompt);
@@ -109,22 +90,94 @@ var handlers = {
         //this.emit(':saveState',�true);//uncomment to save attributes to db on session end
         this.emit(':tell', speechOutput);
     },
+    'LaunchRequest': function () {
+        var self = this;
+        // utterance = 'blub';
+        // console.log('this.event.request: ', this.event.request);
+
+        var api = getApi();
+        api.post('init/')
+            .then(function(res) {
+                speechOutput = "Fantastic, let's go! $$" + understandQuestion;
+                console.log('res.status: ', res);
+                if (res.status === 204 || res.status === 201){ //exists or created
+                    api.get('languages/')
+                        .then(function(res) {
+                            console.log('res.status: ', res, JSON.stringify(res.data));
+                            var selectableLanguages = (res.data && res.data.constructor === Array && res.data.length === 1)
+                                ? res.data.join(', and ') : 'there are no languages to select';
+                            var choseBetween = (res.data.length > 1) ? 'between' : '';
+                            speechOutput = "Which language do you want to learn: You can chose " + choseBetween + ": " + selectableLanguages;
+                            self.emit(":ask", speechOutput, speechOutput);
+                        }).catch(function(err) {
+                            if (res.status === 204 || res.status === 201){ //exists or created
+
+                            }
+                            throw err;
+                        });
+                }else{
+                    self.emit(":ask", speechOutput, speechOutput);
+                }
+            }).catch(function(err) {
+                console.log('err: ', err);
+                speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
+                self.emit(":ask", speechOutput, speechOutput);
+            });
+        // this.emit(':ask', welcomeOutput, welcomeReprompt);
+    },
 	"works": function () {
         var self = this;
 		var speechOutput = "";
         utterance = 'I want to work';
+        console.log('this.event.request: ', this.event.request);
 
+        var api = getApi();
         api.get('sentence')
             .then(function(res) {
+                console.log('res: ', res);
                 speechOutput = "Fantastic, let's go! $$" + understandQuestion;
-                T.toLocaleSpeech(
-                    res,
-                    'de_de',
-                    speechOutput,
-                    userId,
-                    self
-                );
+                try{
+                    T.toLocaleSpeech(
+                        res,
+                        'de_de',
+                        speechOutput,
+                        userId,
+                        self
+                    );
+                }catch(e){
+                    self.emit(":ask", speechOutput, speechOutput);
+                }
             }).catch(function(res) {
+                speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
+                self.emit(":ask", speechOutput, speechOutput);
+            });
+    },
+	"chooseLanguage": function () {
+        var self = this;
+		var speechOutput = "";
+        console.log('this.event.request.intent.slots: ', this.event.request.intent.slots);
+        var chooseLanguageSLOT = this.event.request.intent.slots.language.value;
+        utterance = this.event.request.intent.slots.language.value;
+
+        var api = getApi();
+        api.get('languages/')
+            .then(function(res) {
+                console.log('res.status: ', res, JSON.stringify(res.data));
+                /* if the entered language is part of the possible languages delivered
+                *  by the /language service, set learners language to the entered language */
+                res.data && res.data.constructor === Array && res.data.some(function(lang) {
+                    console.log('lang, chooseLanguageSLOTRaw === lang', lang, chooseLanguageSLOT === lang)
+                    return chooseLanguageSLOT === lang;
+                }) && api.put('learner/' + encodeURIComponent(chooseLanguageSLOT))
+                    .then(function(res) {
+                        console.log('res: ', res);
+                        speechOutput = "Noted that, your selected language is: " + chooseLanguageSLOT + ". Let's start with the onboarding process";
+                        self.emit(":ask", speechOutput, speechOutput);
+                    }).catch(function(err) {
+                        throw err;
+                    });
+
+            }).catch(function(err) {
                 speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
                 self.emit(":ask", speechOutput, speechOutput);
             });
@@ -143,7 +196,7 @@ var handlers = {
             understandQuestion = '';
         }
     	//Your custom intent handling goes here
-
+        var api = getApi();
         api.post('sentence/ok')
             .then(function(res) {
                 speechOutput = gratulation[(random(0,7))] + ", " + continueSentence + ". $$" + understandQuestion;
@@ -176,8 +229,8 @@ var handlers = {
             sadlyOutput = '';
         }
 
-    	//Your custom intent handling goes here
-    	api.post('sentence/notok')
+        var api = getApi();
+        api.post('sentence/notok')
             .then(function(res) {
                 speechOutput = "I noticed that, " + sadlyOutput + ". hmm, ... $$" + understandQuestion;
                 T.toLocaleSpeech(
@@ -199,7 +252,7 @@ var handlers = {
         utterance = translateSLOTRaw;
         var wrapperSentence = "The translation is $." + understandQuestion;
 
-
+        var api = getApi();
         api.get('sentence/translate')
             .then(function(res) {
                 if (random(0,10) < 7){ understandQuestion = ''; }
@@ -225,7 +278,7 @@ var handlers = {
         //any intent slot variables are listed here for convenience
 
         //Your custom intent handling goes here
-
+        var api = getApi();
         api.get('sentence/repeat')
             .then(function(res) {
                 speechOutput = "repeat intent then. you said "+ repeatSLOTRaw + understandQuestion;
@@ -254,7 +307,8 @@ exports.handler = (event, context) => {
     var alexa = Alexa.handler(event, context);
     alexa.APP_ID = APP_ID;
     userId = event.session.user.userId;
-    selectedLanguage = event.request.locale;
+    selectedLanguage = (event.request.locale) ? event.request.locale.split('-')[0] : 'en';
+    deviceLocale = (event.request.locale) ? event.request.locale: 'en-US';
     // To enable string internationalization (i18n) features, set a resources object.
     //alexa.resources = languageStrings;
     alexa.registerHandlers(handlers);

@@ -24,8 +24,9 @@
   };
 
   import axios from 'axios'
+  var baseEndpoint = 'http://52.213.36.32:8080/';
   var understandApi = axios.create({
-    baseURL: 'http://ec2-34-249-81-249.eu-west-1.compute.amazonaws.com:8080/init//',
+    baseURL: baseEndpoint,
     timeout: 1000
   });
 
@@ -40,7 +41,7 @@
     mounted: function() {
       var self = this;
       var understandApi = axios.create({
-        baseURL: 'http://ec2-34-249-81-249.eu-west-1.compute.amazonaws.com:8080/init//',
+        baseURL: 'init/',
         timeout: 1000
       });
       var speechOutput = '';
