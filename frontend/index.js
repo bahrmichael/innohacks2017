@@ -172,34 +172,6 @@ var handlers = {
                 speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
                 self.emit(":ask", speechOutput, speechOutput);
             });
-        // this.emit(':ask', welcomeOutput, welcomeReprompt);
-    },
-	"works": function () {
-        var self = this;
-		var speechOutput = "";
-        utterance = 'I want to work';
-        console.log('this.event.request: ', this.event.request);
-
-        var api = getApi();
-        api.get('sentence')
-            .then(function(res) {
-                console.log('res: ', res);
-                speechOutput = "Fantastic, let's go! $$" + understandQuestion;
-                try{
-                    T.toLocaleSpeech(
-                        res,
-                        'de_de',
-                        speechOutput,
-                        userId,
-                        self
-                    );
-                }catch(e){
-                    self.emit(":ask", speechOutput, speechOutput);
-                }
-            }).catch(function(res) {
-                speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
-                self.emit(":ask", speechOutput, speechOutput);
-            });
     },
 	"chooseLanguage": function () {
         var self = this;
