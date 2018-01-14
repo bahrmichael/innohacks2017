@@ -18,7 +18,7 @@ export default ({ config, db }) => {
 		res.send('created!')
     })
 
-    api.get ('/languages/', (req, res) => res.send(['German'/*, 'English'*/]))
+    api.get ('/languages/', (req, res) => res.send(['German', 'English']))
 
     api.put ('/learner/:language/', (req, res) => {
         res.json({
@@ -26,9 +26,20 @@ export default ({ config, db }) => {
         })
     })
 
-    api.get ('/frequency-words/', (req, res) => {
+    api.get ('/frequency-words/translate/', (req, res) => {
+        res.status(200)
         res.send('this is the mock Frequency Word')
     })
+
+    api.get ('/frequency-words/repeat/', (req, res) => {
+        res.status(200)
+        res.send('Ich wiederhole für dich das Frequenz Wort, Subjekt')
+    })
+
+    api.get ('/frequency-words/', (req, res) => {
+        res.send('Das ist ein gemocktes Frequenz Wort.')
+    })
+
 
     api.post ('/frequency-words/:answer', (req, res) => {
         var ok = '';
@@ -45,9 +56,20 @@ export default ({ config, db }) => {
         res.send('204')
     })
 
+
+    api.get ('/sentence/translate/', (req, res) => {
+        res.status(200)
+        res.send('translated mock sentence')
+    })
+
+    api.get ('/sentence/repeat/', (req, res) => {
+        res.status(200)
+        res.send('Wiederholter Satz')
+    })
+
     api.get ('/sentence/', (req, res) => {
         res.status(200)
-        res.send('Mock Sentence')
+        res.send('Gemockter Satz')
     })
 
     api.post ('/sentence/:answer/', (req, res) => {

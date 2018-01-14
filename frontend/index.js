@@ -48,7 +48,7 @@ var getApi = function() {
             'X-ALEXA-LANGUAGE': selectedLanguage,
             'X-UTTERANCE': utterance
         }
-    })
+    });
     return api;
 }
 
@@ -59,12 +59,17 @@ var helpSpeechOutput =
     'You can make me repeat the last sentence by saying repeat or again. ' +
     'Other then that you can proceed with the next sentence by saying ok or yes, if you understood' +
     ' the sentence. Say no if you did not understand the sentence.';
-var understandQuestion = '... , Did you understand this?';
+var understandQuestionOriginal = '... , Did you understand this?';
+var understandQuestion = understandQuestionOriginal;
+var resetUnderstandQuestion = function() {
+    understandQuestion = understandQuestionOriginal;
+};
 
 var getSentence = function(self, userAnswer) {
     utterance = userAnswer.utterance;
     var api = getApi();
     let answer = (userAnswer.understood) ? 'ok': 'notok';
+    resetUnderstandQuestion();
 
     api.get('onboarding-completed/')
         .then(function(res) {
@@ -140,7 +145,6 @@ var handlers = {
     },
     'LaunchRequest': function () {
         var self = this;
-        // utterance = 'blub';
         // console.log('this.event.request: ', this.event.request);
 
         var api = getApi();
@@ -159,9 +163,9 @@ var handlers = {
                             speechOutput = "Which language do you want to learn: You can chose " + choseBetween + ": " + selectableLanguages;
                             self.emit(":ask", speechOutput, speechOutput);
                         }).catch(function(err) {
-                            if (res.status === 204 || res.status === 201){ //exists or created
-
-                            }
+                            // if (res.status === 204 || res.status === 201){ //exists or created
+                            // needed?
+                            // }
                             throw err;
                         });
                 }else{
@@ -179,57 +183,43 @@ var handlers = {
         // console.log('this.event.request.intent.slots: ', this.event.request.intent.slots);
         var chooseLanguageSLOT = this.event.request.intent.slots.language.value;
         utterance = this.event.request.intent.slots.language.value;
+        // resetUnderstandQuestion();
 
         var api = getApi();
         api.get('languages/')
             .then(function(res) {
                 console.log('chooseLanguage languages res.status: ', res, JSON.stringify(res.data));
+
+                var acceptedLanguage = "Noted that! Your selected language is: ";
+                var proceedSentence = '';
+
                 /* if the entered language is part of the possible languages delivered
                 *  by the /language service, set learners language to the entered language */
-                res.data && res.data.constructor === Array && res.data.some(function(lang) {
-                    // console.log('lang, chooseLanguageSLOT === lang', lang, chooseLanguageSLOT === lang)
-                    return chooseLanguageSLOT === lang;
-                }) && api.put('learner/' + encodeURIComponent(chooseLanguageSLOT))
-                    .then(function(res) {
-                        console.log('learner/'+chooseLanguageSLOT+' res: ', res);
-                        var acceptedLanguage = "Noted that! Your selected language is: ";
-                        api.get('onboarding-completed/')
+                if(res.data && res.data.constructor === Array && res.data.some(function(lang) {
+                    return chooseLanguageSLOT === lang; })
+                ){
+                    api.put('learner/' + encodeURIComponent(chooseLanguageSLOT))
+                        .then(function(res) {
+                            console.log('learner/'+chooseLanguageSLOT+' res: ', res);
+                            return api.get('onboarding-completed/')
                             .then(function(res) {
                                 console.log('onboarding-completed res: ', res);
-                                var proceedSentence = '';
                                 if (res.status === 204){
-                                    proceedSentence = ' Let\'s start with the onboarding process. ';
-
-                                    return api.get('frequency-words/')
-                                        .then(function(res) {
-                                            console.log('frequency-words res: ', res);
-                                            var sentence = res.data;
-                                            speechOutput = acceptedLanguage + chooseLanguageSLOT + "." + proceedSentence + ': '+ sentence + understandQuestion;
-                                            self.emit(":ask", speechOutput, speechOutput);
-                                        }).catch(function(err) {
-                                            throw err;
-                                        });
+                                    proceedSentence = ' Let\'s start with the onboarding process ';
+                                    return api.get('frequency-words/');
                                 }else if (res.status === 200){
-                                    proceedSentence = ' Let\'s proceed with a sentence. ';
-
-                                    return api.get('sentence/')
-                                        .then(function(res) {
-                                            console.log('sentence res: ', res);
-                                            var sentence = res.data;
-                                            speechOutput = acceptedLanguage + chooseLanguageSLOT + "." + proceedSentence + ': '+ sentence + understandQuestion;
-                                            self.emit(":ask", speechOutput, speechOutput);
-                                        }).catch(function(err) {
-                                            throw err;
-                                        });
+                                    proceedSentence = ' Let\'s proceed with the next sentence ';
+                                    return api.get('sentence/');
                                 }
-                            }).catch(function(err) {
-                                throw err;
+                            }).then(function(res) {
+                                console.log('chooseLanguage - frequency-words sentence res:', res.data, res);
+                                speechOutput = acceptedLanguage + chooseLanguageSLOT + '.' + proceedSentence + ': $$ ' + understandQuestion;
+                                T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
                             });
-                    }).catch(function(err) {
-                        throw err;
-                    });
-
+                        });
+                }
             }).catch(function(err) {
+                console.log('err: ', err);
                 speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
                 self.emit(":ask", speechOutput, speechOutput);
             });
@@ -238,119 +228,62 @@ var handlers = {
         var self = this;
 		var speechOutput = "";
         var yesSLOTRaw  = this.event.request.intent.slots.yesSLOT.value;
-        utterance = yesSLOTRaw;
-        // var gratulation = ['wonderful', 'nice', 'fantastic', 'awesome', 'well', 'cool', 'perfect'];
-        // //any intent slot variables are listed here for convenience
-        //
-        // //normal case: continueSentence == '.I will continue'
-        // if (random(0, 10) <= 3) {
-        //     continueSentence = "let\'s continue";
-        //     understandQuestion = '';
-        // }
-
 
         console.log('yes self, userAnswer: ', self, { understood: true, utterance: yesSLOTRaw });
         getSentence(self, { understood: true, utterance: yesSLOTRaw });
-    	//Your custom intent handling goes here
-        // var api = getApi();
-        // api.post('sentence/ok/')
-         //    .then(function(res) {
-         //        speechOutput = gratulation[(random(0,7))] + ", " + continueSentence + ". $$" + understandQuestion;
-         //        T.toLocaleSpeech(
-         //            res,
-         //            'de_de',
-         //            speechOutput,
-         //            userId,
-         //            self
-         //        );
-         //    }).catch(function(res) {
-         //        speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
-         //        self.emit(":ask", speechOutput, speechOutput);
-         //    });
     },
 	"no": function () {
         var self = this;
 		var speechOutput = "";
         var noSLOTRaw  = this.event.request.intent.slots.noSLOT.value;
         utterance = noSLOTRaw;
-        // var sadlyOutput = "let's continue anyways. ";
-        // //any intent slot variables are listed here for convenience
-        //
-        // //normal case: continueSentence == '.I will continue'
-        // if (random(0, 10) === 5) {
-        //     continueSentence = helpSpeechOutput;
-        //     // understandQuestion = '';
-        // }else if(random(0, 10) > 6){
-        //     continueSentence = '';
-        //     sadlyOutput = '';
-        // }
-
 
         console.log('no self, userAnswer: ', self, { understood: true, utterance: noSLOTRaw });
         getSentence(self, { understood: false, utterance: noSLOTRaw });
-
-        // const api = getApi();
-        // api.post('sentence/' + understood)
-        //     .then(function(res) {
-        //         speechOutput = "I noticed that, " + sadlyOutput + ". hmm, ... $$" + understandQuestion;
-        //         T.toLocaleSpeech(
-        //             res,
-        //             'de_de',
-        //             speechOutput,
-        //             userId,
-        //             self
-        //         );
-        //     }).catch(function(res) {
-        //     speechOutput = "I'm having a headache. " + understandQuestion;
-        //     self.emit(":ask", speechOutput, speechOutput);
-        // });
     },
     "translate": function () {
         var self = this;
         var speechOutput = "";
         var translateSLOTRaw  = this.event.request.intent.slots.translateSLOT.value;
         utterance = translateSLOTRaw;
-        var wrapperSentence = "The translation is $." + understandQuestion;
 
         var api = getApi();
-        api.get('sentence/translate')
+        api.get('onboarding-completed/')
+            .then(function(res) {
+                console.log('onboarding-completed res: ', res);
+                if (res.status === 204){ return api.get('frequency-words/translate/'); }
+                else if (res.status === 200){ return api.get('sentence/translate/'); }
+            })
             .then(function(res) {
                 if (random(0,10) < 7){ understandQuestion = ''; }
-                speechOutput = "The translation is: " + res + understandQuestion;
+                speechOutput = "The translation is: " + res.data + understandQuestion;
                 self.emit(":ask", speechOutput, speechOutput);
-            }).catch(function(res) {
-                T.toLocaleSpeech(
-                    /*res*/"Gefangen. Ich bin ein deutschsprechender Hans.",
-                    'de_de',
-                    "$$",
-                    userId,
-                    self
-                );
-                speechOutput = "I'm having a headache and therefore can't think properly. " + understandQuestion;
+                resetUnderstandQuestion();
+            })
+            .catch(function(err) {
+                speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
                 self.emit(":ask", speechOutput, speechOutput);
             });
     },
     "repeat": function () {
         var self = this;
         var speechOutput = "";
-        var repeatSLOTRaw  = this.event.request.intent.slots.repeatSLOT.value;
-        utterance = repeatSLOTRaw;
-        //any intent slot variables are listed here for convenience
+        utterance = this.event.request.intent.slots.repeatSLOT.value;
 
-        //Your custom intent handling goes here
         var api = getApi();
-        api.get('sentence/repeat')
+        api.get('onboarding-completed/')
             .then(function(res) {
-                speechOutput = "repeat intent then. you said "+ repeatSLOTRaw + understandQuestion;
-                self.emit(":ask", speechOutput, speechOutput);
-                T.toLocaleSpeech(
-                    res,
-                    'de_de',
-                    "$$",
-                    userId,
-                    self
-                );
-            }).catch(function(res) {
+                console.log('onboarding-completed res: ', res);
+                if (res.status === 204){ return api.get('frequency-words/repeat/'); }
+                else if (res.status === 200){ return api.get('sentence/repeat/'); }
+            })
+            .then(function(res) {
+                if (random(0,10) < 7){ understandQuestion = ''; }
+                speechOutput = "I repeat the last sentence:  $$ " + understandQuestion;
+                T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
+                resetUnderstandQuestion();
+            })
+            .catch(function(err) {
                 speechOutput = "I'm sorry, I can't repeat the sentence." + understandQuestion;
                 self.emit(":ask", speechOutput, speechOutput);
             });

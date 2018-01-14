@@ -28,44 +28,47 @@ module.exports = {
             console.log('hash :: ' + this.hashSentence('text'));
         }
 
-        polly.synthesizeSpeech({
-            TextType: 'text',
-            OutputFormat: 'mp3',
-            VoiceId: voiceId,
-            Text: text
-        }, function(err, data) {
-            if (err) {
-                console.log("ERRRORRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR");
-                console.log(err, err.stack);} // an error occurred
-            else {
+        try{
+            polly.synthesizeSpeech({
+                TextType: 'text',
+                OutputFormat: 'mp3',
+                VoiceId: voiceId,
+                Text: text
+            }, function(err, data) {
+                if (err) {
+                    console.log("ERRRORRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR");
+                    console.log(err, err.stack);
+                    throw err; // an error occurred
+                } else {
+                    if (data.AudioStream instanceof Buffer) {
+                        var params = {
+                            Body: data.AudioStream,
+                            Bucket: "innohacks2017",
+                            Key: "audio.mp3",
+                            ACL: "public-read"
+                        };
+                        console.log('within synthesizeSpeech' + data.AudioStream, Buffer);
+                        S3.putObject(params, function(err, data) {
+                            console.log('within S3.putObject');
+                            if (err) {
+                                var speechOutput = "Upsalla, something went wrong during the translation.";
+                                console.log(err, err.stack);
+                                context.emit(':ask', speechOutput, speechOutput);
+                            } // an error occurred
+                            else {
+                                console.log(data);
 
-                if (data.AudioStream instanceof Buffer) {
-                    var params = {
-                        Body: data.AudioStream,
-                        Bucket: "innohacks2017",
-                        Key: "audio.mp3",
-                        ACL: "public-read"
-                    };
-
-                    S3.putObject(params, function(err, data) {
-                        if (err) {
-                            var speechOutput = "Upsalla, something went wrong during the translation."
-                            console.log(err, err.stack);
-                            context.emit(':ask', speechOutput, speechOutput);
-                        } // an error occurred
-                        else {
-                            console.log(data);
-
-                            var url = 'https://s3-eu-west-1.amazonaws.com/innohacks2017/audio.mp3';
-                            var ssml = '<audio src="' + url + '" />';
-                            context.emit(':ask', wrapperSentence.replace('$$', ssml), 'reprompt');
-                            // return { sentence: wrapperSentence.replace('$$', ssml), repromt: 'reprompt' };
-                        }           // successful response
-                    });
+                                var url = 'https://s3-eu-west-1.amazonaws.com/innohacks2017/audio.mp3';
+                                var ssml = '<audio src="' + url + '" />';
+                                context.emit(':ask', wrapperSentence.replace('$$', ssml), 'reprompt');
+                            }           // successful response
+                        });
+                    }
+                    return 'The translation process failed';
                 }
-                return 'this is not a valid result';
-                // return 'The translation process failed'
-            }
-        });
+            });
+        }catch(e){
+            context.emit(':ask', wrapperSentence.replace('$$', 'no translation possible'), 'reprompt');
+        }
     }
 };
