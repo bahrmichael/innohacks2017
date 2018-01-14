@@ -59,10 +59,11 @@ module.exports = {
                             var url = 'https://s3-eu-west-1.amazonaws.com/innohacks2017/audio.mp3';
                             var ssml = '<audio src="' + url + '" />';
                             context.emit(':ask', wrapperSentence.replace('$$', ssml), 'reprompt');
+                            // return { sentence: wrapperSentence.replace('$$', ssml), repromt: 'reprompt' };
                         }           // successful response
                     });
                 }
-                return 'this is not a valid result'
+                return 'this is not a valid result';
                 // return 'The translation process failed'
             }
         });

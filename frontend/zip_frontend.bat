@@ -1,0 +1,1 @@
+C:\Programme\7-Zip\7z.exe a -tzip "frontend.zip" "translator.js" "index.js" "node_modules"
