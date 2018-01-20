@@ -11,22 +11,6 @@
  /onboarding-completed -> solange 204, get /onboarding-completed, else get /sentence
 
  */
-var notAllowed = 'This option is not allowed.';
-
-var handleError = function(error) {
-    var err = error.response.data;
-    var speechOutput = 'no error case matched';
-    if (err.currentSection === 'init' && err.requiredSection === 'sentence') {
-        speechOutput = 'You can start your workout by saying start';
-    }
-    if (err.currentSection !== 'explain' && err.requiredSection === 'explain'){
-        speechOutput = notAllowed + 'Valid options are: explain, repeat, next';
-    }
-    this.emit(":ask", speechOutput, speechOutput);
-};
-function random(min, max) {
-    return Math.floor(Math.random() * (max - min) + min);
-}
 
 var deviceLocale = '';
 
@@ -37,6 +21,26 @@ var utterance = '';
 var AWS = require("aws-sdk");
 var T = require("./translator");
 var axios = require("axios");
+var i18n = require('./i18n/index');
+var $t = i18n.getTranslation;
+
+
+// var notAllowed = 'This option is not allowed.';
+// var handleError = function(error) {
+//     var err = error.response.data;
+//     var speechOutput = 'no error case matched';
+//     if (err.currentSection === 'init' && err.requiredSection === 'sentence') {
+//         speechOutput = 'You can start your workout by saying start';
+//     }
+//     if (err.currentSection !== 'explain' && err.requiredSection === 'explain'){
+//         speechOutput = notAllowed + 'Valid options are: explain, repeat, next';
+//     }
+//     this.emit(":ask", speechOutput, speechOutput);
+// };
+function random(min, max) {
+    return Math.floor(Math.random() * (max - min) + min);
+}
+
 
 var getApi = function() {
     var api = axios.create({
@@ -50,19 +54,24 @@ var getApi = function() {
         }
     });
     return api;
-}
+};
 
-var continueSentence = " . I will continue";
-var startSpeechOutput = 'You can start the session by saying start or ok.';
-var helpSpeechOutput =
-    'You can get a translation of the last sentence by saying translate. ' +
-    'You can make me repeat the last sentence by saying repeat or again. ' +
-    'Other then that you can proceed with the next sentence by saying ok or yes, if you understood' +
-    ' the sentence. Say no if you did not understand the sentence.';
-var understandQuestionOriginal = ' , Did you understand this?';
+var continueSentence;
+var startSpeechOutput;
+var helpSpeechOutput;
+var understandQuestionOriginal;
 var understandQuestion = understandQuestionOriginal;
 var resetUnderstandQuestion = function() {
     understandQuestion = understandQuestionOriginal;
+};
+var initStrings = function () {
+    continueSentence = $t('continueSentence');
+    startSpeechOutput = $t('startSpeechOutput');
+    helpSpeechOutput = $t('helpSpeechOutput');
+    understandQuestionOriginal = $t('understandQuestionOriginal');
+    understandQuestion = understandQuestionOriginal;
+    welcomeOutput = startSpeechOutput;
+    welcomeReprompt = startSpeechOutput;
 };
 
 var getSentence = function(self, userAnswer) {
@@ -89,39 +98,43 @@ var getSentence = function(self, userAnswer) {
         })
         .then(function(res) {
             if (userAnswer.understood){
-                var gratulation = ['wonderful', 'nice', 'fantastic', 'awesome', 'well', 'cool', 'perfect'];
-                if (random(0, 10) <= 3) { continueSentence = "let\'s continue"; understandQuestion = ''; }
-                speechOutput = gratulation[(random(0,7))] + ", " + continueSentence + ". $$" + understandQuestion;
+                var gratulation = [$t('gratulations.wonderful'),
+                    $t('gratulations.nice'), $t('gratulations.fantastic'), $t('gratulations.awesome'),
+                    $t('gratulations.well'), $t('gratulations.cool'), $t('gratulations.perfect')];
+                if (random(0, 10) <= 3) { continueSentence = $t('continueSentenceYes'); understandQuestion = ''; }
+                speechOutput = gratulation[(random(0,7))] + ", " + continueSentence + ", $$" + understandQuestion;
                 T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
             }else if(userAnswer.understood === undefined) {
-                speechOutput = "The next sentence is: $$" + understandQuestion;
+                var continueSentenceUndefined = $t('continueSentenceUndefined');
+                speechOutput = continueSentenceUndefined + "$$" + understandQuestion;
                 T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
             }else if(userAnswer.understood === false) {
-                var sadlyOutput = "let's continue anyways. ";
+                var sadlyOutput = $t('sadlyOutput');
                 if (random(0, 10) === 5) { continueSentence = helpSpeechOutput; }
                 else if(random(0, 10) > 6){ continueSentence = ''; sadlyOutput = ''; }
-                speechOutput = "I noticed that, " + sadlyOutput + ". hmm, ... next sentence: $$" + understandQuestion;
+                speechOutput = $t('noticedThat') + sadlyOutput + $t('hmmNext') + " $$" + understandQuestion;
                 T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
             }
             console.log('frequency-words/sentence res: ', res, userAnswer);
         })
         .catch(function(err) {
-            speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
+                // $t('')
+            speechOutput = $t('headache') + understandQuestion;
             self.emit(":ask", speechOutput, speechOutput);
         });
 };
 
 
 
-var speechOutput;
 var reprompt;
-var welcomeOutput = startSpeechOutput;
-var welcomeReprompt = startSpeechOutput;
+var welcomeOutput;
+var welcomeReprompt;
  // 2. Skill Code =======================================================================================================
 "use strict";
 var Alexa = require('alexa-sdk');
-var APP_ID = undefined;  // TODO replace with your app ID (OPTIONAL).
+var APP_ID = 'Lexiq';  // TODO replace with your app ID (OPTIONAL).
 var speechOutput = '';
+
 var handlers = {
     'AMAZON.HelpIntent': function () {
         speechOutput = helpSpeechOutput;
@@ -129,11 +142,11 @@ var handlers = {
         this.emit(':ask', speechOutput, reprompt);
     },
     'AMAZON.CancelIntent': function () {
-        speechOutput = 'You can\'t make me stop, mua ah ha ha ha ha ha';
+        speechOutput = $t('cancelSession');
         this.emit(':tell', speechOutput);
     },
     'AMAZON.StopIntent': function () {
-        speechOutput = 'Really? bye bye kiddo!';
+        speechOutput = $t('stopSession');
         this.emit(':tell', speechOutput);
     },
     'SessionEndedRequest': function () {
@@ -148,17 +161,17 @@ var handlers = {
         var api = getApi();
         api.post('init/')
             .then(function(res) {
-                speechOutput = "Fantastic, let's go! $$" + understandQuestion;
+                speechOutput = $t('init') + " $$" + understandQuestion;
                 console.log('res.status: ', res);
                 if (res.status === 204 || res.status === 201){ //exists or created
                     api.get('languages/')
                         .then(function(res) {
                             console.log('res.status: ', res, JSON.stringify(res.data));
                             var selectableLanguages = (res.data && res.data.constructor === Array && res.data.length >= 1)
-                                ? res.data.join(', and ') : 'there are no languages to select';
+                                ? res.data.join($t('joinAnd')) : $t('noLanguage');
                             var choseBetween = (res.data && res.data.constructor === Array && res.data.length > 1)
-                                ? 'between' : '';
-                            speechOutput = "Which language do you want to learn: You can choose " + choseBetween + ": " + selectableLanguages;
+                                ? $t('between') : '';
+                            speechOutput = $t('chooseLanguage') + choseBetween + ": " + selectableLanguages;
                             self.emit(":ask", speechOutput, speechOutput);
                         }).catch(function(err) {
                             // if (res.status === 204 || res.status === 201){ //exists or created
@@ -171,7 +184,7 @@ var handlers = {
                 }
             }).catch(function(err) {
                 console.log('err: ', err);
-                speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
+                speechOutput = $t('headache') + understandQuestion;
                 self.emit(":ask", speechOutput, speechOutput);
             });
     },
@@ -188,7 +201,7 @@ var handlers = {
             .then(function(res) {
                 console.log('chooseLanguage languages res.status: ', res, JSON.stringify(res.data));
 
-                var acceptedLanguage = "Noted that! Your selected language is: ";
+                var acceptedLanguage = $t('acceptedLanguage');
                 var proceedSentence = '';
 
                 /* if the entered language is part of the possible languages delivered
@@ -203,22 +216,22 @@ var handlers = {
                             .then(function(res) {
                                 console.log('onboarding-completed res: ', res);
                                 if (res.status === 204){
-                                    proceedSentence = ' Let\'s start with the onboarding process ';
+                                    proceedSentence = $t('proceedOnboarding');
                                     return api.get('frequency-words/');
                                 }else if (res.status === 200){
-                                    proceedSentence = ' Let\'s proceed with the next sentence ';
+                                    proceedSentence = $t('proceedSentence');
                                     return api.get('sentence/');
                                 }
                             }).then(function(res) {
                                 console.log('chooseLanguage - frequency-words sentence res:', res.data, res);
-                                speechOutput = acceptedLanguage + chooseLanguageSLOT + '.' + proceedSentence + ': $$ ' + understandQuestion;
+                                speechOutput = acceptedLanguage + chooseLanguageSLOT + ', ' + proceedSentence + ': $$ ' + understandQuestion;
                                 T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
                             });
                         });
                 }
             }).catch(function(err) {
                 console.log('err: ', err);
-                speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
+                speechOutput = $t('headache') + understandQuestion;
                 self.emit(":ask", speechOutput, speechOutput);
             });
     },
@@ -263,12 +276,12 @@ var handlers = {
             })
             .then(function(res) {
                 if (random(0,10) < 7){ understandQuestion = ''; }
-                speechOutput = "The translation is: " + res.data + understandQuestion;
+                speechOutput = $t('translationIs') + res.data + understandQuestion;
                 self.emit(":ask", speechOutput, speechOutput);
                 resetUnderstandQuestion();
             })
             .catch(function(err) {
-                speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
+                speechOutput = $t('headache') + understandQuestion;
                 self.emit(":ask", speechOutput, speechOutput);
             });
     },
@@ -286,17 +299,17 @@ var handlers = {
             })
             .then(function(res) {
                 if (random(0,10) < 7){ understandQuestion = ''; }
-                speechOutput = "I repeat the last sentence:  $$ " + understandQuestion;
+                speechOutput = $t('repeat') + " $$ " + understandQuestion;
                 T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
                 resetUnderstandQuestion();
             })
             .catch(function(err) {
-                speechOutput = "I'm sorry, I can't repeat the sentence." + understandQuestion;
+                speechOutput = $t('cantRepeat') + understandQuestion;
                 self.emit(":ask", speechOutput, speechOutput);
             });
     },
 	'Unhandled': function () {
-        speechOutput = "The skill didn't quite understand what you wanted. Do you want to try something else?";
+        speechOutput = $t('unhandled');
         this.emit(':ask', speechOutput, speechOutput);
     }
 };
@@ -309,6 +322,10 @@ exports.handler = (event, context) => {
     userId = event.session.user.userId;
     selectedLanguage = (event.request.locale) ? event.request.locale.split('-')[0] : 'en';
     deviceLocale = (event.request.locale) ? event.request.locale: 'en-US';
+    /* set internalization by setting language */
+    i18n.setLanguage(selectedLanguage);
+    initStrings();
+
     // To enable string internationalization (i18n) features, set a resources object.
     //alexa.resources = languageStrings;
     alexa.registerHandlers(handlers);
