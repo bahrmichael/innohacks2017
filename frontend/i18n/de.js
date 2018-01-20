@@ -2,9 +2,9 @@ module.exports = {
     continueSentence: " . Ich mache weiter",
     startSpeechOutput: 'Du kannst die Sitzung starten indem du start oder ok sagst. ',
     helpSpeechOutput: 'Du kannst eine Übersetzung des letzten Satzes bekommen, indem du übersetzen oder Übersetzung sagst. ' +
-    'Ich kann für dich den letzten Satz wiederholen wenn du wiederhole oder nochmal sagst. ' +
-    'Other then that you can proceed with the next sentence by saying ok or yes, if you understood' +
-    ' the sentence. Sag nein, falls du den Satz nicht verstanden hast. Du kannst jederzeit einen neuen Satz anfragen mit nächster Satz.',
+        'Ich kann für dich den letzten Satz wiederholen wenn du wiederhole oder nochmal sagst. ' +
+        'Other then that you can proceed with the next sentence by saying ok or yes, if you understood' +
+        ' the sentence. Sag nein, falls du den Satz nicht verstanden hast. Du kannst jederzeit einen neuen Satz anfragen mit nächster Satz.',
     understandQuestionOriginal: ' , hast du das verstanden?',
     continueSentenceYes: "Weiter geht\'s",
     continueSentenceUndefined: "Der nächste Satz ist: ",
@@ -34,5 +34,5 @@ module.exports = {
     translationIs: "Die Übersetzung lautet: ",
     repeat: "Ich wiederhole den letzten Satz: ",
     cantRepeat: "Tut mir leid, ich kann den letzten Satz nicht wiederholen ",
-    unhandled: "Der Skill hat nicht genau verstanden, was du sagen wolltest. Willst du etwas anderes ausprobieren?",
+    unhandled: "Der Skill hat nicht genau verstanden, was du sagen wolltest. Willst du etwas anderes ausprobieren?"
 };

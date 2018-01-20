@@ -34,5 +34,5 @@ module.exports = {
     translationIs: "The translation is: ",
     repeat: "I repeat the last sentence: ",
     cantRepeat: "I'm sorry, I can't repeat the sentence ",
-    unhandled: "The skill didn't quite understand what you wanted. Do you want to try something else?",
+    unhandled: "The skill didn't quite understand what you wanted. Do you want to try something else?"
 };

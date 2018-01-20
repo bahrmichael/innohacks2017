@@ -45,7 +45,7 @@ function random(min, max) {
 var getApi = function() {
     var api = axios.create({
         // baseURL: 'http://52.213.36.32:8080/',
-        baseURL: 'https://21a80077.ngrok.io/api/',
+        baseURL: 'https://lexiq-skill.herokuapp.com/api/',
         timeout: 10000,
         headers: {
             'X-ALEXA-ID': userId,
@@ -103,17 +103,17 @@ var getSentence = function(self, userAnswer) {
                     $t('gratulations.well'), $t('gratulations.cool'), $t('gratulations.perfect')];
                 if (random(0, 10) <= 3) { continueSentence = $t('continueSentenceYes'); understandQuestion = ''; }
                 speechOutput = gratulation[(random(0,7))] + ", " + continueSentence + ", $$" + understandQuestion;
-                T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
+                T.toLocaleSpeech( res.data, 'de', speechOutput, userId, self );
             }else if(userAnswer.understood === undefined) {
                 var continueSentenceUndefined = $t('continueSentenceUndefined');
                 speechOutput = continueSentenceUndefined + "$$" + understandQuestion;
-                T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
+                T.toLocaleSpeech( res.data, 'de', speechOutput, userId, self );
             }else if(userAnswer.understood === false) {
                 var sadlyOutput = $t('sadlyOutput');
                 if (random(0, 10) === 5) { continueSentence = helpSpeechOutput; }
                 else if(random(0, 10) > 6){ continueSentence = ''; sadlyOutput = ''; }
                 speechOutput = $t('noticedThat') + sadlyOutput + $t('hmmNext') + " $$" + understandQuestion;
-                T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
+                T.toLocaleSpeech( res.data, 'de', speechOutput, userId, self );
             }
             console.log('frequency-words/sentence res: ', res, userAnswer);
         })
@@ -226,7 +226,7 @@ var handlers = {
                             }).then(function(res) {
                                 console.log('chooseLanguage - frequency-words sentence res:', res.data, res);
                                 speechOutput = acceptedLanguage + chooseLanguageSLOT + ', ' + proceedSentence + ': $$ ' + understandQuestion;
-                                T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
+                                T.toLocaleSpeech( res.data, 'de', speechOutput, userId, self );
                             });
                         });
                 }
@@ -301,7 +301,7 @@ var handlers = {
             .then(function(res) {
                 if (random(0,10) < 7){ understandQuestion = ''; }
                 speechOutput = $t('repeat') + " $$ " + understandQuestion;
-                T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
+                T.toLocaleSpeech( res.data, 'de', speechOutput, userId, self );
                 resetUnderstandQuestion();
             })
             .catch(function(err) {
