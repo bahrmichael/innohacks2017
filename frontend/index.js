@@ -28,7 +28,7 @@ function random(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
 }
 
-var deviceLocale = ''
+var deviceLocale = '';
 
 var userId = '';
 var selectedLanguage = '';
@@ -41,8 +41,8 @@ var axios = require("axios");
 var getApi = function() {
     var api = axios.create({
         // baseURL: 'http://52.213.36.32:8080/',
-        baseURL: 'https://d283ec0b.ngrok.io/api/',
-        timeout: 3000,
+        baseURL: 'https://1499fbef.ngrok.io/api/',
+        timeout: 10000,
         headers: {
             'X-ALEXA-ID': userId,
             'X-ALEXA-LANGUAGE': selectedLanguage,
@@ -59,7 +59,7 @@ var helpSpeechOutput =
     'You can make me repeat the last sentence by saying repeat or again. ' +
     'Other then that you can proceed with the next sentence by saying ok or yes, if you understood' +
     ' the sentence. Say no if you did not understand the sentence.';
-var understandQuestionOriginal = '... , Did you understand this?';
+var understandQuestionOriginal = ' , Did you understand this?';
 var understandQuestion = understandQuestionOriginal;
 var resetUnderstandQuestion = function() {
     understandQuestion = understandQuestionOriginal;
@@ -73,13 +73,15 @@ var getSentence = function(self, userAnswer) {
 
     api.get('onboarding-completed/')
         .then(function(res) {
-            console.log('onboarding-completed res: ', res);
+            console.log('onboarding-completed res: ', res, userAnswer);
             if (res.status === 204){
+                if (userAnswer.understood === undefined) { return api.get('frequency-words/'); }
                 /* notify server that you understood the frequency word or not, then immidiately fetch the next frequency word */
                 return api.post('frequency-words/'+answer+'/')
                     .then(function(res) { return api.get('frequency-words/'); });
             }
             else if (res.status === 200){
+                if (userAnswer.understood === undefined) { return api.get('sentence/'); }
                 /* notify server that you understood the sentence or not, then immidiately fetch the next sentence  */
                 return api.post('sentence/'+answer+'/')
                     .then(function(res) { return api.get('sentence/'); });
@@ -88,24 +90,20 @@ var getSentence = function(self, userAnswer) {
         .then(function(res) {
             if (userAnswer.understood){
                 var gratulation = ['wonderful', 'nice', 'fantastic', 'awesome', 'well', 'cool', 'perfect'];
-                //normal case: continueSentence == '.I will continue'
                 if (random(0, 10) <= 3) { continueSentence = "let\'s continue"; understandQuestion = ''; }
                 speechOutput = gratulation[(random(0,7))] + ", " + continueSentence + ". $$" + understandQuestion;
                 T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
-            }else {
+            }else if(userAnswer.understood === undefined) {
+                speechOutput = "The next sentence is: $$" + understandQuestion;
+                T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
+            }else if(userAnswer.understood === false) {
                 var sadlyOutput = "let's continue anyways. ";
-                //normal case: continueSentence == '.I will continue'
                 if (random(0, 10) === 5) { continueSentence = helpSpeechOutput; }
                 else if(random(0, 10) > 6){ continueSentence = ''; sadlyOutput = ''; }
                 speechOutput = "I noticed that, " + sadlyOutput + ". hmm, ... next sentence: $$" + understandQuestion;
                 T.toLocaleSpeech( res.data, 'de_de', speechOutput, userId, self );
             }
-
-            console.log('frequency-words/sentence res: ', res);
-            // var sentence = res.data;
-            // speechOutput = 'next: '+ sentence + understandQuestion;
-            // self.emit(":ask", speechOutput, speechOutput);
-            /* handled in translator function T.toLocaleSpeech*/
+            console.log('frequency-words/sentence res: ', res, userAnswer);
         })
         .catch(function(err) {
             speechOutput = "I'm having a headache and didn't get your last answer. " + understandQuestion;
@@ -131,7 +129,7 @@ var handlers = {
         this.emit(':ask', speechOutput, reprompt);
     },
     'AMAZON.CancelIntent': function () {
-        speechOutput = '';
+        speechOutput = 'You can\'t make me stop, mua ah ha ha ha ha ha';
         this.emit(':tell', speechOutput);
     },
     'AMAZON.StopIntent': function () {
@@ -160,7 +158,7 @@ var handlers = {
                                 ? res.data.join(', and ') : 'there are no languages to select';
                             var choseBetween = (res.data && res.data.constructor === Array && res.data.length > 1)
                                 ? 'between' : '';
-                            speechOutput = "Which language do you want to learn: You can chose " + choseBetween + ": " + selectableLanguages;
+                            speechOutput = "Which language do you want to learn: You can choose " + choseBetween + ": " + selectableLanguages;
                             self.emit(":ask", speechOutput, speechOutput);
                         }).catch(function(err) {
                             // if (res.status === 204 || res.status === 201){ //exists or created
@@ -183,7 +181,7 @@ var handlers = {
         // console.log('this.event.request.intent.slots: ', this.event.request.intent.slots);
         var chooseLanguageSLOT = this.event.request.intent.slots.language.value;
         utterance = this.event.request.intent.slots.language.value;
-        // resetUnderstandQuestion();
+        resetUnderstandQuestion();
 
         var api = getApi();
         api.get('languages/')
@@ -238,8 +236,17 @@ var handlers = {
         var noSLOTRaw  = this.event.request.intent.slots.noSLOT.value;
         utterance = noSLOTRaw;
 
-        console.log('no self, userAnswer: ', self, { understood: true, utterance: noSLOTRaw });
+        console.log('no self, userAnswer: ', { understood: true, utterance: noSLOTRaw });
         getSentence(self, { understood: false, utterance: noSLOTRaw });
+    },
+	"sentence": function () {
+        var self = this;
+		var speechOutput = "";
+        var sentenceSLOT  = this.event.request.intent.slots.sentenceSLOT.value;
+        utterance = sentenceSLOT;
+
+        console.log('sentence, userAnswer: ', { understood: undefined, utterance: sentenceSLOT });
+        getSentence(self, { understood: undefined, utterance: sentenceSLOT });
     },
     "translate": function () {
         var self = this;
