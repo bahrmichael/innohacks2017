@@ -45,7 +45,7 @@ function random(min, max) {
 var getApi = function() {
     var api = axios.create({
         // baseURL: 'http://52.213.36.32:8080/',
-        baseURL: 'https://1499fbef.ngrok.io/api/',
+        baseURL: 'https://21a80077.ngrok.io/api/',
         timeout: 10000,
         headers: {
             'X-ALEXA-ID': userId,
@@ -142,11 +142,12 @@ var handlers = {
         this.emit(':ask', speechOutput, reprompt);
     },
     'AMAZON.CancelIntent': function () {
+        // speechOutput = $t('stopSession');
         speechOutput = $t('cancelSession');
         this.emit(':tell', speechOutput);
     },
     'AMAZON.StopIntent': function () {
-        speechOutput = $t('stopSession');
+        speechOutput = $t('cancelSession');
         this.emit(':tell', speechOutput);
     },
     'SessionEndedRequest': function () {
